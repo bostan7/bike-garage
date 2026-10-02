@@ -15,7 +15,6 @@ Update this file after every work session.
 |---|---|---|
 | Bike photos | Toni: take the photos in the [photo checklist](#photo-checklist), save them into `photos/` | Phase 1 (matching the model to the real bike) |
 | Bike measurements | Toni: measure and fill in [BIKE-SPECS.md → My measurements](BIKE-SPECS.md#my-measurements) | Phase 1 (proportions) |
-| Blender MCP (optional) | Toni: install `uv` + the Blender add-on (steps given in chat on 2026-10-02) | Live Blender control. Phase 1 can start without it (headless Blender) |
 | Go-ahead for Phase 1 | Toni's OK | All building work |
 
 ---
@@ -39,7 +38,7 @@ Update this file after every work session.
 - ✅ Write `CLAUDE.md` (project rules, commands, architecture)
 - ✅ Pixel 9 Pro connected with USB debugging (serial `<device-serial>`)
 - ✅ Blender 5.2 LTS found at `D:\Programs\Blender Foundation\Blender 5.2`
-- 🔲 Blender MCP installed and connected (optional)
+- ✅ Blender MCP add-on v1.8 installed (telemetry and 3rd-party asset/AI options off), registered in `.mcp.json`, tested (built a test wheel and read a viewport screenshot)
 
 ## Phase 1 — 3D model
 
@@ -138,5 +137,5 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
-| 2026-10-02 | Git set up, `CLAUDE.md` written. Phone connected. Blender 5.2 found. Blender MCP install steps given. |
+| 2026-10-02 | Git set up, `CLAUDE.md` written. Phone connected. Blender 5.2 found. Blender MCP installed and tested. |
 | 2026-10-01 | Plan written. Stock spec researched. Android project, data layer and 2D prototype built (prototype UI will be replaced). Folder organized, checklist created. |
