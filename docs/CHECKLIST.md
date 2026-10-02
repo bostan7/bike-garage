@@ -5,7 +5,7 @@ Update this file after every work session.
 **Legend:** ✅ done · 🔲 to do · 🚧 in progress · ⛔ blocked (see the *Blocked* section for why)
 
 **Last updated:** 2026-10-02
-**Current phase:** Phase 0 done → waiting to start Phase 1 (3D model)
+**Current phase:** Phase 0 + online research done → enough material to start Phase 1 (3D model) once Toni says go
 
 ---
 
@@ -13,8 +13,9 @@ Update this file after every work session.
 
 | Item | Waiting on | Blocks |
 |---|---|---|
-| Bike photos | Toni: take the photos in the [photo checklist](#photo-checklist), save them into `photos/` | Phase 1 (matching the model to the real bike) |
-| Bike measurements | Toni: measure and fill in [BIKE-SPECS.md → My measurements](BIKE-SPECS.md#my-measurements) | Phase 1 (proportions) |
+| Download official reference media (360° video, studio photo, geometry drawing) | Toni's OK to download (list in [research/SOURCES.md](research/SOURCES.md#proposed-downloads-waiting-for-tonis-ok)) | Best 3D reference for Phase 1 |
+| Own photos of the bike (with my modifications) | Toni: no access to the bike for a few days. Take photos from the [photo checklist](#photo-checklist) | Final matching of the model + custom parts (**not** blocking the start of Phase 1 any more) |
+| Checks on the real bike | Toni: [BIKE-SPECS.md → Measure on the real bike](BIKE-SPECS.md#measure-on-the-real-bike-) (fork decal XCR32/X1, stem length, crank length…) | Small details only |
 | Go-ahead for Phase 1 | Toni's OK | All building work |
 
 ---
@@ -40,19 +41,32 @@ Update this file after every work session.
 - ✅ Blender 5.2 LTS found at `D:\Programs\Blender Foundation\Blender 5.2`
 - ✅ Blender MCP add-on v1.8 installed (telemetry and 3rd-party asset/AI options off), registered in `.mcp.json`, tested (built a test wheel and read a viewport screenshot)
 
+## Research (online, before having access to the bike)
+
+- ✅ Identified the exact bike: SCOTT article **280483**, Scale 980 Dark Grey (MY2021, carried over into MY2022). Not the 2023+ redesign
+- ✅ Official SCOTT spec found (archived product page) → [BIKE-SPECS.md](BIKE-SPECS.md)
+- ✅ Official SCOTT geometry for all sizes (live file on SCOTT's media server). Caught a wrong 425 mm chainstay figure (that's the carbon Scale)
+- ✅ Computed 3D coordinates for size L (axles, head tube, seat tube, ground) and checked them against the fork length (501 vs 503 mm, consistent)
+- ✅ Per-part research: dimensions, looks, service facts → [research/COMPONENTS.md](research/COMPONENTS.md)
+- ✅ Visual details from the official studio photo: neon-yellow down tube logo, neon-yellow Syncros grips, black fork, silver chain and cassette, black spokes
+- ✅ Found official SCOTT **360° spin video** + studio photo + geometry drawing → [research/SOURCES.md](research/SOURCES.md)
+- ✅ Found a real used 2022 Scale 980 size L with 25 photos (buycycle)
+- 🔲 Fix the app's preloaded part data with the new findings (list at the end of COMPONENTS.md). Do when building
+
 ## Phase 1 — 3D model
 
-- ⛔ Collect photos (see below)
-- ⛔ Collect measurements
+- ✅ Size-L geometry and 3D coordinates (official)
 - ✅ Blender installed (5.2 LTS)
-- 🔲 Write the Blender script: frame from size-L geometry (wheelbase, head angle 69.5°, stack/reach, BB drop)
-- 🔲 Model the fork (Suntour XCR32, 100 mm) with separate stanchions and lowers
+- ⛔ Download official 360° video / studio photo (waiting for OK)
+- ⛔ Own photos and measurements (when Toni has the bike; not needed to start)
+- 🔲 Write the Blender script: frame from the size-L coordinates in BIKE-SPECS.md
+- 🔲 Model the fork (Suntour XCR32, 100 mm, A2C 501 mm, 32 mm stanchions, remote cable) with separate stanchions and lowers
 - 🔲 Model the wheels: 29" rims, 32 spokes, hubs, Rekon Race tyres with tread
 - 🔲 Model the drivetrain: 32T ring, Hollowtech crank, 10–51T cassette, chain, RD-M6100 derailleur, pedals
 - 🔲 Model the brakes: MT200 levers and calipers, 180/160 rotors, hoses
 - 🔲 Model the cockpit: 740 mm bar, stem, grips, shifter, lockout remote, headset
 - 🔲 Model the saddle (Belcarra), seatpost, seat clamp
-- 🔲 Materials: matte/gloss black frame, metal, rubber; decals from the close-up photos
+- 🔲 Materials: matte dark grey frame, neon-yellow SCOTT down-tube logo, gloss-black top-tube logo, neon-yellow grips, black fork, silver chain/cassette, black spokes, rubber
 - 🔲 Name every part to match the app slots (`frame`, `fork`, `chain`, `brake_front`, …)
 - 🔲 Export `3d/models/bike.glb`. Target < 10 MB, smooth on the Pixel 9 Pro
 - 🔲 Compare with the side photos, then adjust proportions
@@ -137,5 +151,6 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-02 | Online research: identified the exact bike (article 280483, Dark Grey), official spec + geometry, 3D coordinates, per-part research, official 360° video found. Docs: BIKE-SPECS.md rewritten, research/COMPONENTS.md, research/SOURCES.md. |
 | 2026-10-02 | Git set up, `CLAUDE.md` written. Phone connected. Blender 5.2 found. Blender MCP installed and tested. |
 | 2026-10-01 | Plan written. Stock spec researched. Android project, data layer and 2D prototype built (prototype UI will be replaced). Folder organized, checklist created. |

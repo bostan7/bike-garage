@@ -12,7 +12,8 @@ It shows the bike in 3D in a *Need for Speed*-style garage. For every part it tr
 ├── docs/
 │   ├── PLAN.md            ← the full plan (what we're building and how)
 │   ├── CHECKLIST.md       ← progress tracker: done / to do / blocked  ⭐ update after every session
-│   └── BIKE-SPECS.md      ← stock spec sheet + my own measurements
+│   ├── BIKE-SPECS.md      ← official spec, geometry, 3D coordinates, things to measure
+│   └── research/          ← COMPONENTS.md (per-part details) · SOURCES.md (sources, photos, 360° video)
 ├── photos/                ← bike photos for building the 3D model (local only, not in git)
 │   ├── full-bike/         ← side, front, rear, top, ¾ views
 │   └── closeups/          ← one folder per area (cockpit, fork, drivetrain, brakes, …)
