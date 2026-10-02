@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFFF6A13</color>
+
+    <style name="Theme.ScaleBike" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#FF0E0F11</item>
+        <item name="android:windowSplashScreenBackground">#FF0E0F11</item>
+    </style>
+</resources>

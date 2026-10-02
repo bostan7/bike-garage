@@ -1,0 +1,236 @@
+package dev.toni.scalebike.data
+
+import dev.toni.scalebike.data.Category.BRAKES
+import dev.toni.scalebike.data.Category.COCKPIT
+import dev.toni.scalebike.data.Category.CONTACT
+import dev.toni.scalebike.data.Category.DRIVETRAIN
+import dev.toni.scalebike.data.Category.FRAME
+import dev.toni.scalebike.data.Category.WHEELS
+
+/**
+ * Stock spec of the 2022 Scott Scale 980 (size L, black).
+ * Intervals are sensible starting points for XC riding — edit them per part to match how you ride.
+ */
+object SeedData {
+    fun initial(): BikeData = BikeData(parts = stockParts())
+
+    private fun part(
+        slot: String, category: Category, name: String, brand: String, model: String, spec: String,
+        description: String, pros: List<String>, cons: List<String>, maintenance: String,
+        km: Int?, days: Int?, replaceHint: String,
+    ) = Part(
+        id = "$slot-stock", slot = slot, category = category, name = name, brand = brand, model = model,
+        spec = spec, description = description, pros = pros, cons = cons, maintenance = maintenance,
+        serviceIntervalKm = km, serviceIntervalDays = days, replaceHint = replaceHint,
+    )
+
+    fun stockParts(): List<Part> = listOf(
+        part(
+            "frame", FRAME, "Frame", "Scott", "Scale Alloy (2022)",
+            "6061 custom-butted aluminium · 29\" · size L · tapered head tube · BB92 press-fit · Boost QR 5×141 mm rear",
+            "The aluminium hardtail cross-country frame everything else bolts to.",
+            listOf("Light and stiff for an alloy frame", "Efficient XC geometry — climbs well", "Hardtail = few moving parts, cheap to run", "Tapered head tube allows future fork upgrades"),
+            listOf("Harsher ride than carbon or full-suspension", "Quick-release rear is less stiff than a thru-axle", "Press-fit BB shell can creak if not kept clean"),
+            "Wash and inspect welds, dropouts, chainstays and around the BB/head tube for cracks or dents. Check cable rub spots and protect them with frame tape.",
+            km = null, days = 180, replaceHint = "Replace only if cracked or bent — any crack means stop riding.",
+        ),
+        part(
+            "fork", FRAME, "Suspension fork", "SR Suntour", "XCR32 RL-R",
+            "100 mm travel · coil spring · rebound adjust · remote lockout · 32 mm stanchions · 1 1/8\" steerer · QR",
+            "Absorbs bumps at the front wheel. RL-R = remote lockout with rebound adjustment.",
+            listOf("Coil spring is consistent and almost maintenance-free", "Handlebar remote lockout for climbs/road", "Adjustable rebound", "Cheap to service"),
+            listOf("Heavy (~2.3 kg) compared to air forks", "Spring rate can't be tuned to rider weight like an air fork (preload only)", "32 mm stanchions flex more under hard braking", "Basic damping on rough descents"),
+            "Wipe the stanchions after every ride. Lower-leg service (clean, new oil, check seals) about every 50 riding hours; full damper service about every 100 h. Check the lockout cable tension.",
+            km = 750, days = 180, replaceHint = "Popular upgrade: an air fork (e.g. RockShox Judy/Recon or Suntour Epixon) — check steerer type and axle standard first.",
+        ),
+        part(
+            "headset", FRAME, "Headset", "Syncros", "OE Press Fit reducer",
+            "Tapered 1.5\" → 1 1/8\" reducer · OD 50/62 mm · ID 44/56 mm",
+            "Bearings that let the fork and handlebar turn smoothly in the head tube.",
+            listOf("Simple, cheap bearings", "Reducer means the frame can take a tapered fork later"),
+            listOf("OE bearings are basic and let water in", "Play here makes braking feel vague and wears the frame"),
+            "Check for play: front brake on, rock the bike back and forth with a hand on the head tube. Strip, clean and grease once a year (more after wet winters).",
+            km = 3000, days = 365, replaceHint = "Replace bearings when they feel notchy or gritty when turning the bars.",
+        ),
+        part(
+            "stem", COCKPIT, "Stem", "Syncros", "Alloy 6061",
+            "Oversized 31.8 mm clamp · 1 1/8\" steerer · 6° rise",
+            "Connects the handlebar to the fork steerer; its length sets how stretched you are.",
+            listOf("Light and stiff", "Standard sizes — easy to swap for fit"),
+            listOf("Stock length may not suit your fit"),
+            "Check bolts with a torque wrench (usually 5–6 Nm — see the marking on the stem). Make sure it's aligned with the front wheel.",
+            km = null, days = 90, replaceHint = "Swap for a shorter/longer stem only to fix fit; replace after a crash.",
+        ),
+        part(
+            "handlebar", COCKPIT, "Handlebar", "Syncros", "Alloy 6061 flat bar",
+            "T-shape flat · 740 mm wide · 9° backsweep · 31.8 mm clamp",
+            "Steering and control; width affects stability and comfort.",
+            listOf("740 mm gives good control", "Flat bar keeps a fast XC position"),
+            listOf("Alloy transmits more vibration than carbon", "Narrower than modern trail bars (760–780 mm)"),
+            "Inspect for scratches/cracks near the stem clamp and controls, especially after crashes. Keep controls torqued.",
+            km = null, days = 365, replaceHint = "Replace after any crash that bends or deeply scratches it.",
+        ),
+        part(
+            "grips", COCKPIT, "Grips", "Syncros", "Stock grips",
+            "Lock-on / slide-on (check yours)",
+            "Your main contact point — comfort and control.",
+            listOf("Included and functional"),
+            listOf("Basic comfort on long rides"),
+            "Check they don't rotate and look for torn rubber.",
+            km = null, days = 365, replaceHint = "Replace when worn smooth or torn — cheap comfort upgrade (e.g. ergonomic grips).",
+        ),
+        part(
+            "shifter", COCKPIT, "Shifter & cables", "Shimano", "Deore SL-M6100-R",
+            "12-speed · Rapidfire Plus · mechanical cable",
+            "Right-hand trigger shifter that pulls the derailleur cable.",
+            listOf("Crisp, light shifting", "Multi-release (2 gears at once)", "Very reliable"),
+            listOf("Cable and housing wear and get dirty — shifting degrades over time"),
+            "Replace the inner cable and, ideally, the housing once a year or when shifting gets sluggish.",
+            km = null, days = 365, replaceHint = "Shifter itself rarely needs replacing; cables yearly.",
+        ),
+        part(
+            "brake_front", BRAKES, "Front brake", "Shimano", "MT200",
+            "Hydraulic disc · 2-piston · mineral oil · resin pads",
+            "Front lever + caliper. Does most of your stopping.",
+            listOf("Hydraulic = consistent and self-adjusting", "Mineral oil is easy and cheap to bleed", "Cheap, widely available pads"),
+            listOf("Entry-level power — can fade on long steep descents", "Lever feel is less refined than higher-end Shimano"),
+            "Check pad thickness every ~300 km; replace pads when friction material is under 0.5 mm. Bleed once a year or when the lever feels spongy. Keep oil/lube off pads and rotor.",
+            km = 500, days = 365, replaceHint = "Pads wear out (typical 500–1500 km depending on mud). Upgrade path: Shimano MT420/MT520 4-piston.",
+        ),
+        part(
+            "brake_rear", BRAKES, "Rear brake", "Shimano", "MT200",
+            "Hydraulic disc · 2-piston · mineral oil · resin pads",
+            "Rear lever + caliper — used for speed control.",
+            listOf("Hydraulic = consistent and self-adjusting", "Mineral oil is easy and cheap to bleed", "Cheap, widely available pads"),
+            listOf("Entry-level power", "Rear pads wear faster in mud"),
+            "Check pad thickness every ~300 km; replace pads when friction material is under 0.5 mm. Bleed once a year or when the lever feels spongy.",
+            km = 500, days = 365, replaceHint = "Pads typically last 500–1500 km.",
+        ),
+        part(
+            "rotor_front", BRAKES, "Front rotor", "Shimano", "SM-RT10",
+            "180 mm · Center Lock · resin pads only",
+            "The disc the front caliper clamps on.",
+            listOf("180 mm gives good power for the front", "Center Lock = quick to fit"),
+            listOf("Basic steel rotor — heats up on long descents", "Resin pads only"),
+            "Check for warping and thickness. Clean with isopropyl alcohol if brakes squeal.",
+            km = 1500, days = 365, replaceHint = "Replace when thinner than 1.5 mm or badly warped.",
+        ),
+        part(
+            "rotor_rear", BRAKES, "Rear rotor", "Shimano", "SM-RT10",
+            "160 mm · Center Lock · resin pads only",
+            "The disc the rear caliper clamps on.",
+            listOf("Light", "Center Lock = quick to fit"),
+            listOf("160 mm is small — can overheat on long descents"),
+            "Check for warping and thickness. Clean with isopropyl alcohol if brakes squeal.",
+            km = 1500, days = 365, replaceHint = "Replace when thinner than 1.5 mm. Upgrade: 180 mm rotor + adapter for more power.",
+        ),
+        part(
+            "crankset", DRIVETRAIN, "Crankset & chainring", "Shimano", "FC-MT511-1",
+            "1× · 32T chainring · Hollowtech II",
+            "Turns your pedalling into chain movement.",
+            listOf("Stiff Hollowtech II design", "Narrow-wide ring holds the chain well"),
+            listOf("Heavier than Deore/XT cranks", "32T may be low for fast flat riding"),
+            "Check the left arm pinch bolts and that there's no side play. Inspect chainring teeth for shark-fin wear.",
+            km = 2000, days = 365, replaceHint = "Chainring typically lasts 2–3 chains.",
+        ),
+        part(
+            "bottom_bracket", DRIVETRAIN, "Bottom bracket", "Shimano", "BB-MT500-PA",
+            "Press-fit BB92 · shell 41 × 89.5 mm",
+            "Bearings the crank spins on.",
+            listOf("Cheap and easy to source", "Good sealing for the price"),
+            listOf("Press-fit can creak", "Needs a bearing press to replace"),
+            "Spin the cranks with the chain off — check for roughness or play. Creaks? Clean & re-grease the interfaces.",
+            km = 3000, days = 365, replaceHint = "Replace when rough or there's play.",
+        ),
+        part(
+            "chain", DRIVETRAIN, "Chain", "KMC", "X12",
+            "12-speed · with quick link",
+            "Transfers power from chainring to cassette. The part that wears fastest — and protects the expensive parts if replaced on time.",
+            listOf("Strong and smooth shifting", "Quick link = easy removal for cleaning"),
+            listOf("Wears out quickly in mud/grit", "A worn chain destroys the cassette and chainring"),
+            "Clean and lube every ~150 km or after any wet ride. Check wear with a chain checker every ~300 km — replace at 0.5% stretch.",
+            km = 300, days = 60, replaceHint = "Typically 1500–3000 km. Replace at 0.5% on the chain checker.",
+        ),
+        part(
+            "cassette", DRIVETRAIN, "Cassette", "Shimano", "Deore CS-M6100-12",
+            "12-speed · 10–51T · Micro Spline",
+            "The rear gears. 10–51T gives a huge range for steep climbs.",
+            listOf("Huge 510% range", "Steel cogs last a long time"),
+            listOf("Heavy (~470 g)", "Bigger jumps between gears than 11-speed"),
+            "Clean along with the chain. Check for skipping on the most-used cogs after fitting a new chain.",
+            km = 2000, days = 365, replaceHint = "Usually lasts 2–3 chains if the chain is replaced on time.",
+        ),
+        part(
+            "derailleur", DRIVETRAIN, "Rear derailleur", "Shimano", "Deore RD-M6100 SGS",
+            "12-speed · Shadow Plus clutch · long cage",
+            "Moves the chain across the cassette and keeps it tensioned.",
+            listOf("Clutch reduces chain slap and drops", "Precise, reliable shifting", "Shadow design tucks it away"),
+            listOf("Exposed — rocks and crashes bend the hanger", "Needs indexing when the cable stretches"),
+            "Clean the jockey wheels, check the hanger is straight, check B-tension and indexing.",
+            km = 500, days = 90, replaceHint = "Carry a spare derailleur hanger — bent hangers are the #1 cause of bad shifting.",
+        ),
+        part(
+            "pedals", DRIVETRAIN, "Pedals", "Feimin", "FP873ZU",
+            "Flat pedals (stock)",
+            "Your feet's contact with the bike.",
+            listOf("Included, simple"),
+            listOf("Basic grip and bearings", "Most riders upgrade these first"),
+            "Check bearings for play and that they're tight in the cranks.",
+            km = null, days = 365, replaceHint = "Upgrade: wide flat pedals with pins, or SPD clipless for XC.",
+        ),
+        part(
+            "wheel_front", WHEELS, "Front wheel", "Syncros", "Rim 32H + Formula CL-51 hub",
+            "29\" · 32 spokes · Center Lock · QR",
+            "Rim, spokes and hub of the front wheel.",
+            listOf("32 spokes = strong and easy to true", "Center Lock rotor mount"),
+            listOf("Heavy-ish entry-level wheelset", "QR is less stiff than thru-axle"),
+            "Spin and check for wobble (true), squeeze spoke pairs for loose ones, check hub for play.",
+            km = 1000, days = 180, replaceHint = "Wheelset is a big upgrade for weight and tubeless readiness.",
+        ),
+        part(
+            "wheel_rear", WHEELS, "Rear wheel", "Syncros", "Rim 32H + Shimano FH-MT401-B hub",
+            "29\" · 32 spokes · Boost QR 5×141 mm · Micro Spline freehub · Center Lock",
+            "Rim, spokes, hub and freehub of the rear wheel.",
+            listOf("Shimano hub is reliable and serviceable", "Micro Spline fits 12-speed Shimano cassettes"),
+            listOf("Heavy-ish", "Freehub engagement is slow"),
+            "Spin and check for wobble, check spoke tension, check hub/freehub for play or grinding.",
+            km = 1000, days = 180, replaceHint = "Service hub bearings yearly.",
+        ),
+        part(
+            "tire_front", WHEELS, "Front tyre", "Maxxis", "Rekon Race",
+            "29 × 2.25\" · 60 TPI",
+            "Fast-rolling XC tyre.",
+            listOf("Very fast rolling and light", "Great on hardpack and gravel"),
+            listOf("Low knobs — weak in mud and loose corners", "Thin casing → pinch flats at low pressure"),
+            "Check pressure every ride. Inspect for cuts and knob wear.",
+            km = 1500, days = 180, replaceHint = "Front usually lasts much longer than the rear. Grippier front option: Maxxis Forekaster / Ardent Race.",
+        ),
+        part(
+            "tire_rear", WHEELS, "Rear tyre", "Maxxis", "Rekon Race",
+            "29 × 2.25\" · 60 TPI",
+            "Fast-rolling XC tyre — the rear wears fastest.",
+            listOf("Very fast rolling and light", "Great on hardpack"),
+            listOf("Center knobs wear quickly", "Loses traction in mud"),
+            "Check pressure every ride. Inspect centre knob height and sidewalls.",
+            km = 1000, days = 180, replaceHint = "Typically 1500–3000 km for a rear Rekon Race.",
+        ),
+        part(
+            "seatpost", CONTACT, "Seatpost", "Syncros", "Alloy rigid post",
+            "31.6 × 400 mm",
+            "Holds the saddle at the right height.",
+            listOf("Simple, light, no maintenance"),
+            listOf("No dropper — saddle stays high on descents"),
+            "Remove, clean and grease (alloy in alloy frame can seize). Mark your saddle height before removing.",
+            km = null, days = 180, replaceHint = "Popular upgrade: 31.6 mm dropper post (check frame routing).",
+        ),
+        part(
+            "saddle", CONTACT, "Saddle", "Syncros", "Belcarra Regular 2.5",
+            "Steel rails",
+            "Where you sit — comfort is very personal.",
+            listOf("Decent all-round shape"),
+            listOf("May not fit your sit bones"),
+            "Check rails and clamp bolts. Keep it level.",
+            km = null, days = 365, replaceHint = "Replace when the cover tears or rails bend.",
+        ),
+    )
+}

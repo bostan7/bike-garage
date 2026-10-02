@@ -1,0 +1,23 @@
+# Android / Gradle
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+*.iml
+
+# Reference photos stay local (large files); folder structure is kept via .gitkeep
+photos/**/*
+!photos/**/
+!photos/**/.gitkeep
+
+# Blender autosaves
+3d/**/*.blend1
+3d/**/*.blend2
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
