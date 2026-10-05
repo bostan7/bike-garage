@@ -94,24 +94,34 @@ def stats(coll):
     return total
 
 
-def export_glb(coll, path):
+def export_glb(coll, path, draco=False):
+    """draco=True: Draco-compressed copy for the phone app (Filament's full gltfio decodes it).
+    Positions keep 16 bits (~0.03 mm steps) so the 0.3-0.5 mm decal layers stay apart."""
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     bpy.ops.object.select_all(action='DESELECT')
     for ob in coll.objects:
         ob.select_set(True)
     kwargs = dict(filepath=path, export_format='GLB', use_selection=True, export_apply=True,
                   export_extras=True, export_yup=True)
-    try:
-        bpy.ops.export_scene.gltf(**kwargs)
-    except TypeError:
-        bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True)
-    print(f"exported {path} ({os.path.getsize(path) / 1e6:.2f} MB)")
+    if draco:
+        kwargs.update(export_draco_mesh_compression_enable=True, export_draco_mesh_compression_level=6,
+                      export_draco_position_quantization=16, export_draco_normal_quantization=10,
+                      export_draco_texcoord_quantization=12, export_draco_color_quantization=10,
+                      export_draco_generic_quantization=12)
+        bpy.ops.export_scene.gltf(**kwargs)          # no silent fallback: an uncompressed phone model is a bug
+    else:
+        try:
+            bpy.ops.export_scene.gltf(**kwargs)
+        except TypeError:
+            bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True)
+    print(f"exported {path} ({os.path.getsize(path) / 1e6:.2f} MB{', draco' if draco else ''})")
 
 
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
     ap.add_argument("--glb")
+    ap.add_argument("--glb-draco", help="also write a Draco-compressed copy (for the phone app)")
     ap.add_argument("--blend")
     ap.add_argument("--render")
     ap.add_argument("--views", default="")
@@ -124,6 +134,8 @@ def main():
     stats(coll)
     if args.glb:
         export_glb(coll, args.glb)
+    if args.glb_draco:
+        export_glb(coll, args.glb_draco, draco=True)
     if args.blend:
         bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(args.blend))
     if args.render:

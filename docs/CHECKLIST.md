@@ -5,7 +5,7 @@ Update this file after every work session.
 **Legend:** ✅ done · 🔲 to do · 🚧 in progress · ⛔ blocked (see the *Blocked* section for why)
 
 **Last updated:** 2026-10-05
-**Current phase:** Phase 1 — 3D model v1 done (`3d/models/bike.glb`). Next: refine with Toni's photos, then Phase 2 (3D garage in the app)
+**Current phase:** Phase 1 done (model v3, 525k triangles, commits 56f805c..92cdd7f). Phase 2 (3D garage in the app): questions answered, plan written (PLAN.md 5b), waiting for Toni's OK to build
 
 ---
 
@@ -18,7 +18,7 @@ Update this file after every work session.
 | Saddle + pedal models | Toni's photos (saddle: bigger and softer than the Belcarra; pedals: silver two-sided trekking) | Exact shapes (built as a generic comfort saddle and Wellgo B087-like pedals) |
 | Own photos of the bike (with my modifications) | Toni: no access to the bike for a few days. Take photos from the [photo checklist](#photo-checklist) | Model refinement: Toni's modifications + small details (v1 is built from official material) |
 | Checks on the real bike | Toni: [BIKE-SPECS.md → Measure on the real bike](BIKE-SPECS.md#measure-on-the-real-bike-) (fork decal XCR32/X1, stem length, **crank length: Toni thinks 175 mm, to check (stamped inside the arm)**, **fork decal XCR 32 or X1 32 (Toni: don't know yet)**, valve type Presta/Schrader…) | Small details only |
-| Go-ahead for Phase 2 (3D garage in the app) | Toni's OK after reviewing model v1 | Phase 2 |
+| Go-ahead to build Phase 2 (3D garage in the app) | Toni's OK on the Phase 2 plan ([PLAN.md → 5b](PLAN.md)) | Phase 2 build |
 
 ---
 
@@ -89,7 +89,15 @@ Update this file after every work session.
 
 ## Phase 2 — 3D garage scene in the app
 
-- 🔲 Add SceneView (Filament) to the app
+- ✅ Decisions (Toni): dark NFS garage, full v3 compressed, tap = highlight + name + condition, Garage = home (other 2D screens stay), status-view glow, spin when idle, 120 fps while touching, phone installs OK during Phase 2
+- ✅ Phone model: Draco-compressed bike.glb in the app assets (16.3 → 2.27 MB, 23 parts; `build_bike.py --glb-draco`)
+- ✅ 3D engine: **plain Google Filament 1.75.1** instead of SceneView (SceneView 4.x and Filament ≥ 1.76 need Kotlin 2.4; ours is 2.2.20; fewer dependencies). Garage IBL made on the phone from the CC0 `parking_garage` HDR (1k, 1.6 MB). `garage/GarageRenderer.kt` + `Garage3D.kt`; home route shows the 3D garage. `assembleDebug` OK
+- ✅ First phone test (Pixel 9 Pro, Mali-G715, GLES 3.2): bike renders, drag/pinch work, cold start ~0.7 s. Fixed a native crash on leaving the screen (ModelViewer frees itself on detach; our objects now go first)
+- ✅ **Design change (Toni): game garage UI** (NFS look + GTA camera), **landscape**, panels over the garage, no bottom bar; extras: sounds, vibration, condition badge, intro. Plan updated (PLAN.md 5b, 12 steps), CLAUDE.md conventions updated
+- 🔲 Step 3: landscape + full-screen, remove the bottom bar
+- 🔲 Step 4: dark NFS garage scene (exposure, spotlights, glossy floor, turntable neon ring, bloom)
+- 🔲 Step 5: intro (lights on, camera sweep)
+- 🔲 Step 6–8: game HUD + condition badge, NFS main menu (fonts, sounds, vibration), PARTS as LS Customs (camera fly-to)
 - 🔲 Garage environment: dark studio, spotlights, reflective floor, turntable
 - 🔲 Load `bike.glb`, slow turntable spin
 - 🔲 Camera: orbit (drag), zoom (pinch), reset (double-tap)
@@ -167,6 +175,9 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-05 | First phone test OK after fixing a detach crash. Toni: the app must look like a game garage (NFS + GTA camera), landscape, panels over the garage, sounds/vibration/badge/intro. Plan and CLAUDE.md updated. |
+| 2026-10-05 | Phase 2 build started (Toni's OK): Draco phone model, Filament 1.75.1 (plan change from SceneView, Kotlin compatibility), garage HDR lighting, 3D garage as home; debug APK builds. Phone install blocked: adb unauthorized. |
+| 2026-10-05 | Pass 5 committed (92cdd7f), model v3 complete. Phase 2 started with questions: all 8 answered; Phase 2 plan written in PLAN.md (section 5b). No code yet. |
 | 2026-10-05 | Pass 5 rendered on Toni's request (saddle, pedal close-ups): pedals rebuilt as an open frame; exported and viewer republished. Model v3 complete (525k). |
 | 2026-10-05 | Pass 4 committed (be562e9). Pass 5 started: questions answered (comfort saddle + silver trekking pedals = Toni's changes, rider 181 cm), references downloaded, saddle/pedals/saddle height built without rendering (526k). |
 | 2026-10-05 | Pass 4 rendered on Toni's request (lever, calipers, cockpit close-ups): fixed caliper/adapter layout, lever blade and pivot; exported and viewer republished. Toni: triangle budget is a soft guide. |

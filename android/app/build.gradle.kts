@@ -58,4 +58,9 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.5")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // 3D garage: Google Filament (1.75.1 is the newest built with Kotlin < 2.4; full gltfio decodes Draco)
+    implementation("com.google.android.filament:filament-android:1.75.1")
+    implementation("com.google.android.filament:gltfio-android:1.75.1")
+    implementation("com.google.android.filament:filament-utils-android:1.75.1")
 }

@@ -137,6 +137,46 @@ To add: `Upgrade` (wishlist item: part slot, name, price, link, stat deltas), pa
 
 ---
 
+## 5b. Phase 2 plan: 3D garage in the app (decided with Toni, 2026-10-05)
+
+**Toni's choices:** dark NFS garage ("really cool looking") · full v3 model, compressed · tap = highlight + name + condition · Garage becomes the home screen, the other 2D screens stay reachable · condition colours as a glow in a "status view" · turntable spins when idle · 120 fps while touching, lower when idle · test builds may be installed on the Pixel 9 Pro during Phase 2.
+
+**Update (Toni, 2026-10-05, after the first phone test): the app must look like a game garage (Forza / GTA / NFS), not a normal app.** Decisions: NFS neon look + GTA LS Customs camera (every menu choice flies the camera to that area of the bike) · **landscape only** · no Material bottom bar; service log, workshop tools, bike settings and part details are **panels over the 3D garage** · extras: menu sounds (mutable), vibration, a Forza-style condition badge (class + number), an intro (garage lights switch on, camera sweep).
+
+| Step | What | Done when |
+|---|---|---|
+| 1 | ✅ Phone model: Draco `bike.glb` (2.27 MB, 23 parts) | done |
+| 2 | ✅ Engine: plain Filament 1.75.1 (SceneView 4.x needs Kotlin 2.4), garage IBL from a CC0 parking-garage HDR, 3D view as home; detach crash fixed | done, runs on the Pixel |
+| 3 | **Landscape + full-screen:** lock to landscape, hide the system bars (immersive), remove the Material bottom bar | App opens sideways, no app chrome |
+| 4 | **Dark NFS garage scene:** indoor camera exposure, 3 spotlights (key, rim, top), soft shadows, glossy reflective floor, turntable with a neon light ring, bloom; framing for landscape | Phone screenshot looks like a game garage |
+| 5 | **Intro:** garage lights switch on one by one, camera sweeps around the bike, then the menu slides in | Plays at start (skippable by tap) |
+| 6 | **Game HUD:** nameplate (SCOTT SCALE 980), odometer, **condition badge** (class letter + number from the condition logic), open issues, next service | Values come from `BikeRepository` |
+| 7 | **Main menu, NFS style:** slanted neon tiles (PARTS · SERVICE LOG · WORKSHOP · BIKE), game fonts bundled offline (OFL), sounds + vibration on moves | Every tile opens its panel |
+| 8 | **PARTS = LS Customs:** category list on the side (Wheels & tyres, Drivetrain, Brakes, Cockpit, Frame & fork, Contact points); picking one flies the camera to that area; parts list → tap = highlight + name + condition | All 23 parts reachable from the menu and by tapping the bike |
+| 9 | **Turntable + free camera:** slow spin when idle, drag = orbit, pinch = zoom, double-tap = reset; spin stops in menus | Smooth |
+| 10 | **Status view:** parts glow green / amber / red (emissive + bloom) | Matches the condition logic |
+| 11 | **Panels over the garage:** service log (timeline), workshop (tools), bike settings, part details, re-skinned as translucent game panels (logic reused) | Old features all reachable |
+| 12 | **Performance:** 120 Hz while touching, ~60 Hz while spinning idle; fps, load time, memory on the Pixel 9 Pro | Numbers in the checklist |
+
+<details><summary>First version of the Phase 2 steps (portrait, before the game-UI decision)</summary>
+
+| Step | What | Done when |
+|---|---|---|
+| 1 | **Phone model:** export `bike.glb` with Draco compression (Blender exporter, 16-bit positions so the 0.3–0.5 mm decal layers don't flicker), copy to `app/src/main/assets/`. Part names stay the 23 slots | File ≤ ~4 MB, all 23 parts present |
+| 2 | **Add Filament 1.75.1** (plain Filament + gltfio + filament-utils ModelViewer; changed from SceneView, whose 4.x versions need Kotlin 2.4) with exact pinned versions | `assembleDebug` builds, model loads |
+| 3 | **Garage scene:** dark studio, 3 spotlights (key, rim, top), soft shadows, glossy reflective floor, turntable disc with a neon light ring, bloom + tone mapping + anti-aliasing | Screenshot on the phone looks like an NFS garage |
+| 4 | **Turntable + camera:** slow spin when idle (stops on touch, restarts after ~5 s), drag = orbit, pinch = zoom (limits), double-tap = reset | Smooth on the phone |
+| 5 | **Tap a part:** Filament picking → node → slot name → highlight the part + label with name and condition (from `Status.kt`) | Every one of the 23 parts can be tapped |
+| 6 | **Status view:** button; each part glows green / amber / red (emissive tint + bloom) | Matches the condition logic |
+| 7 | **Home + navigation:** Garage replaces the flat drawing as home; small HUD (odometer, condition %, open issues); timeline, tools and part details reachable | Old screens still work |
+| 8 | **Performance:** 120 Hz while touching, ~60 Hz while spinning idle; measure fps, load time, memory on the Pixel 9 Pro | Numbers in the checklist |
+
+</details>
+
+**Risks:** SceneView may need a newer Compose BOM (check before upgrading); Draco decoding time at start-up (fallback: meshopt via gltfpack); screen-space reflections may cost fps (fallback: glossy floor without real reflections); a real outline needs an extra render pass, so the highlight starts as an emissive glow.
+
+---
+
 ## 6. Current state of the folder
 
 - A **2D prototype** builds and runs. It has a flat bike drawing with tappable dots, and the part detail, timeline, tools and garage screens. It was only a test, and its UI gets replaced by the 3D garage. The **data layer and logic are kept**.

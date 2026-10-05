@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -25,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.toni.scalebike.data.BikeRepository
+import dev.toni.scalebike.garage.Garage3D
 import dev.toni.scalebike.ui.screens.GarageScreen
 import dev.toni.scalebike.ui.screens.HomeScreen
 import dev.toni.scalebike.ui.screens.PartDetailScreen
@@ -83,7 +85,7 @@ fun BikeApp(repo: BikeRepository) {
             },
         ) { pad ->
             NavHost(nav, startDestination = "home", modifier = Modifier.padding(pad)) {
-                composable("home") { HomeScreen(data, openPart) }
+                composable("home") { Garage3D(Modifier.fillMaxSize()) }   // Phase 2: 3D garage is home
                 composable("timeline") { TimelineScreen(data, openPart) }
                 composable("tools") { ToolsScreen(data) }
                 composable("garage") { GarageScreen(data) }
