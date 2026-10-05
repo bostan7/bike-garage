@@ -1,0 +1,125 @@
+"""Build Toni's SCOTT Scale 980 (Dark Grey, L) in Blender and export it for the app.
+
+Run (headless):
+  blender --background --factory-startup --python 3d/blender/build_bike.py -- \
+      --glb 3d/models/bike.glb [--blend out.blend] [--render DIR] [--views side_photo,front34]
+
+Every part is one object named after its app slot (frame, fork, chain, ...). See CLAUDE.md.
+"""
+import argparse
+import os
+import sys
+import time
+
+import bpy
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
+from bikelib import brakes, cockpit, drivetrain, fork, frame, materials, preview, seat, wheels  # noqa: E402
+
+SLOTS = ["frame", "fork", "headset", "stem", "handlebar", "grips", "shifter", "brake_front", "brake_rear",
+         "rotor_front", "rotor_rear", "crankset", "bottom_bracket", "chain", "cassette", "derailleur", "pedals",
+         "wheel_front", "wheel_rear", "tire_front", "tire_rear", "seatpost", "saddle"]
+
+
+def clear_scene():
+    for ob in list(bpy.data.objects):
+        bpy.data.objects.remove(ob)
+    for coll in (bpy.data.meshes, bpy.data.materials, bpy.data.cameras, bpy.data.lights, bpy.data.curves):
+        for item in list(coll):
+            coll.remove(item)
+    materials.reset()
+
+
+def build():
+    coll = bpy.data.collections.new("ScaleBike")
+    bpy.context.scene.collection.children.link(coll)
+    remote_anchor = lambda side: cockpit.bar_point(side * (0.370 - 0.130 - 0.050))  # noqa: E731
+    builders = [
+        lambda: frame.build(coll),
+        lambda: fork.build(coll, remote_anchor),
+        lambda: fork.build_headset(coll),
+        lambda: cockpit.build_stem(coll),
+        lambda: cockpit.build_handlebar(coll),
+        lambda: cockpit.build_grips(coll),
+        lambda: cockpit.build_shifter(coll),
+        lambda: brakes.build_brake(coll, True),
+        lambda: brakes.build_brake(coll, False),
+        lambda: brakes.build_rotor(coll, True),
+        lambda: brakes.build_rotor(coll, False),
+        lambda: drivetrain.build_crankset(coll),
+        lambda: drivetrain.build_bottom_bracket(coll),
+        lambda: drivetrain.build_chain(coll),
+        lambda: drivetrain.build_cassette(coll),
+        lambda: drivetrain.build_derailleur(coll),
+        lambda: drivetrain.build_pedals(coll),
+        lambda: wheels.build_wheel(coll, True),
+        lambda: wheels.build_wheel(coll, False),
+        lambda: wheels.build_tyre(coll, True),
+        lambda: wheels.build_tyre(coll, False),
+        lambda: seat.build_seatpost(coll),
+        lambda: seat.build_saddle(coll),
+    ]
+    for b in builders:
+        b()
+    missing = [s for s in SLOTS if s not in coll.objects]
+    assert not missing, f"missing slots: {missing}"
+    return coll
+
+
+def stats(coll):
+    total = 0
+    rows = []
+    for ob in coll.objects:
+        ob.data.calc_loop_triangles()
+        tris = len(ob.data.loop_triangles)
+        total += tris
+        rows.append((ob.name, tris))
+    for name, tris in sorted(rows, key=lambda r: -r[1]):
+        print(f"  {name:16s} {tris:7d} tris")
+    print(f"  {'TOTAL':16s} {total:7d} tris")
+    return total
+
+
+def export_glb(coll, path):
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    bpy.ops.object.select_all(action='DESELECT')
+    for ob in coll.objects:
+        ob.select_set(True)
+    kwargs = dict(filepath=path, export_format='GLB', use_selection=True, export_apply=True,
+                  export_extras=True, export_yup=True)
+    try:
+        bpy.ops.export_scene.gltf(**kwargs)
+    except TypeError:
+        bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True)
+    print(f"exported {path} ({os.path.getsize(path) / 1e6:.2f} MB)")
+
+
+def main():
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--glb")
+    ap.add_argument("--blend")
+    ap.add_argument("--render")
+    ap.add_argument("--views", default="")
+    args = ap.parse_args(argv)
+
+    t0 = time.time()
+    clear_scene()
+    coll = build()
+    print(f"built {len(coll.objects)} parts in {time.time() - t0:.1f}s")
+    stats(coll)
+    if args.glb:
+        export_glb(coll, args.glb)
+    if args.blend:
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(args.blend))
+    if args.render:
+        eng = preview.setup(bpy.context.scene)
+        print("render engine:", eng)
+        preview.render_views(args.render, [v for v in args.views.split(",") if v] or None)
+
+
+if __name__ == "__main__":
+    main()

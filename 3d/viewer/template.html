@@ -1,0 +1,247 @@
+<title>Scale 980 3D Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one studio "stage" (the 3D view) with the part sheet under it on phones, beside it on wide screens. */
+:root {
+  --bg: #e9ecef;          /* studio cyclorama grey */
+  --stage: #f4f6f8;
+  --surface: #ffffff;
+  --fg: #15181b;
+  --muted: #5b626a;
+  --line: #d3d8de;
+  --accent: #4f5c00;      /* olive: the neon yellow, darkened to read on light grey */
+  --neon: #c9f000;        /* the bike's neon yellow (grips, SCOTT logo) */
+  --on-neon: #15181b;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111315; --stage: #181b1e; --surface: #1d2124; --fg: #e8ebee; --muted: #9aa2aa;
+    --line: #2b3035; --accent: #d4f53c; --neon: #c9f000; --on-neon: #15181b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111315; --stage: #181b1e; --surface: #1d2124; --fg: #e8ebee; --muted: #9aa2aa;
+  --line: #2b3035; --accent: #d4f53c; --neon: #c9f000; --on-neon: #15181b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-inline: 16px; padding-block: 20px 32px;
+}
+.wrap { max-width: 1180px; margin-inline: auto; display: grid; gap: 18px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 6vw, 46px); line-height: 1; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h1 em { font-style: normal; color: var(--accent); }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.main { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .main { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; } }
+.stage { position: relative; background: var(--stage); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; aspect-ratio: 4 / 3; max-width: 100%; touch-action: none; }
+@media (min-width: 900px) { .stage { aspect-ratio: 16 / 11; } }
+.stage canvas { display: block; width: 100%; height: 100%; }
+.hint { position: absolute; left: 12px; bottom: 10px; font-size: 12.5px; color: var(--muted); pointer-events: none; }
+.tools { position: absolute; right: 10px; top: 10px; display: flex; gap: 6px; }
+.tools button, .chip {
+  font: 600 13px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase;
+  background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; cursor: pointer;
+}
+.tools button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.part-name { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1.05; margin: 0; }
+.part-model { font-weight: 600; }
+.part-spec { color: var(--muted); font-size: 14px; }
+.slot { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.groups { display: grid; gap: 12px; }
+.group h2 { margin: 0 0 6px; font: 600 12px/1.2 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { text-transform: none; letter-spacing: .02em; font-size: 14px; padding: 7px 11px; }
+.chip[aria-pressed="true"] { background: var(--neon); color: var(--on-neon); border-color: var(--neon); }
+.note { font-size: 13px; color: var(--muted); max-width: 65ch; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">SCOTT Scale 980 · Dark Grey · Size L · Art. 280483</div>
+    <h1>3D model <em>v2</em></h1>
+    <div class="facts" id="facts">
+      <span>23 parts</span><span>__TRIS__ triangles</span><span>__MB__ MB glTF</span><span>wheelbase 1138.2 mm</span><span>head angle 69.5°</span>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="stage" id="stage">
+      <div class="loading" id="loading">Loading model…</div>
+      <div class="tools">
+        <button type="button" id="spin" aria-pressed="true">Spin</button>
+        <button type="button" id="reset">Reset view</button>
+      </div>
+      <div class="hint">Drag to rotate · pinch or scroll to zoom · tap a part</div>
+    </div>
+
+    <aside class="sheet" aria-live="polite">
+      <div id="detail">
+        <div class="slot" id="d-slot">frame</div>
+        <h2 class="part-name" id="d-name">Frame</h2>
+        <div class="part-model" id="d-model"></div>
+        <div class="part-spec" id="d-spec"></div>
+      </div>
+      <div class="groups" id="groups"></div>
+    </aside>
+  </div>
+
+  <p class="note">Built in Blender by a script from SCOTT's official size-L geometry and checked against SCOTT's studio photo and 360° video of this exact model. v2 adds welded frame joints, cast fork parts, shaped tyre tread, real sprocket teeth, drilled rotors and detailed controls. Your own photos will refine the details and add your modifications.</p>
+</div>
+
+<script id="parts" type="application/json">__PARTS_JSON__</script>
+<script id="glb" type="application/octet-stream">__GLB_BASE64__</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script>
+(function () {
+  const PARTS = JSON.parse(document.getElementById('parts').textContent);
+  const ORDER = ["Frame & fork", "Cockpit", "Brakes", "Drivetrain", "Wheels & tyres", "Saddle & seatpost"];
+  const stage = document.getElementById('stage');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- part list ---------------------------------------------------------------------------
+  const groupsEl = document.getElementById('groups');
+  const chips = {};
+  ORDER.forEach(cat => {
+    const inCat = Object.entries(PARTS).filter(([, p]) => p.category === cat);
+    if (!inCat.length) return;
+    const g = document.createElement('div'); g.className = 'group';
+    g.innerHTML = '<h2></h2><div class="chips"></div>';
+    g.querySelector('h2').textContent = cat;
+    inCat.forEach(([slot, p]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.id = 'chip-' + slot; b.textContent = p.name;
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => select(slot, true));
+      g.querySelector('.chips').appendChild(b);
+      chips[slot] = b;
+    });
+    groupsEl.appendChild(g);
+  });
+
+  // ---- three.js stage ------------------------------------------------------------------------
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.shadowMap.enabled = true;
+  stage.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+
+  const camera = new THREE.PerspectiveCamera(30, 4 / 3, 0.05, 50);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.minDistance = 0.6; controls.maxDistance = 6;
+  controls.maxPolarAngle = Math.PI * 0.53;
+  const HOME = { pos: new THREE.Vector3(1.75, 0.95, 2.35), target: new THREE.Vector3(0.13, 0.52, 0) };
+  function home() { camera.position.copy(HOME.pos); controls.target.copy(HOME.target); controls.update(); }
+  home();
+
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+  sun.position.set(1.5, 3.5, 2.0); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -1.4, right: 1.4, top: 1.4, bottom: -1.4, near: 0.5, far: 8 });
+  scene.add(sun, new THREE.HemisphereLight(0xffffff, 0x8a8f96, 0.5));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.ShadowMaterial({ opacity: 0.18 }));
+  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+  const meshesBySlot = {};
+  let selected = null;
+  const NEON = new THREE.Color(0xc9f000);
+
+  function b64ToBuffer(b64) {
+    const bin = atob(b64.trim()); const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out.buffer;
+  }
+  new THREE.GLTFLoader().parse(b64ToBuffer(document.getElementById('glb').textContent), '', gltf => {
+    const root = gltf.scene;
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true;
+      // own copy of each material so highlighting one part never tints another
+      o.material = Array.isArray(o.material) ? o.material.map(m => m.clone()) : o.material.clone();
+      let n = o; while (n && !PARTS[n.name]) n = n.parent;
+      if (!n) return;
+      o.userData.slot = n.name;
+      (meshesBySlot[n.name] = meshesBySlot[n.name] || []).push(o);
+    });
+    scene.add(root);
+    document.getElementById('loading').hidden = true;
+    select('frame', false);
+  }, err => { document.getElementById('loading').textContent = 'The model could not be loaded: ' + err; });
+
+  function mats(o) { return Array.isArray(o.material) ? o.material : [o.material]; }
+  function select(slot, fromList) {
+    if (selected) (meshesBySlot[selected] || []).forEach(o => mats(o).forEach(m => { m.emissive && m.emissive.set(0x000000); }));
+    if (selected && chips[selected]) chips[selected].setAttribute('aria-pressed', 'false');
+    selected = slot;
+    (meshesBySlot[slot] || []).forEach(o => mats(o).forEach(m => { if (m.emissive) { m.emissive.copy(NEON); m.emissiveIntensity = 0.28; } }));
+    if (chips[slot]) chips[slot].setAttribute('aria-pressed', 'true');
+    const p = PARTS[slot];
+    document.getElementById('d-slot').textContent = slot;
+    document.getElementById('d-name').textContent = p.name;
+    document.getElementById('d-model').textContent = p.brand + ' ' + p.model;
+    document.getElementById('d-spec').textContent = p.spec;
+    if (fromList) stopSpin();
+  }
+
+  // tap (not drag) picks a part
+  const ray = new THREE.Raycaster(); const ptr = new THREE.Vector2(); let down = null;
+  renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; });
+  renderer.domElement.addEventListener('pointerup', e => {
+    if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) { down = null; return; }
+    down = null;
+    const r = renderer.domElement.getBoundingClientRect();
+    ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ptr, camera);
+    const hit = ray.intersectObjects(Object.values(meshesBySlot).flat(), false)[0];
+    if (hit) { select(hit.object.userData.slot, false); stopSpin(); }
+  });
+
+  // spin + reset
+  const spinBtn = document.getElementById('spin');
+  let spinning = !reduced;
+  spinBtn.setAttribute('aria-pressed', String(spinning));
+  function stopSpin() { spinning = false; spinBtn.setAttribute('aria-pressed', 'false'); }
+  spinBtn.addEventListener('click', () => { spinning = !spinning; spinBtn.setAttribute('aria-pressed', String(spinning)); });
+  document.getElementById('reset').addEventListener('click', home);
+  controls.addEventListener('start', stopSpin);
+
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    renderer.setSize(r.width, r.height, false);
+    camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage); resize();
+
+  const clock = new THREE.Clock();
+  renderer.setAnimationLoop(() => {
+    const dt = clock.getDelta();
+    if (spinning) {
+      const off = camera.position.clone().sub(controls.target);
+      off.applyAxisAngle(new THREE.Vector3(0, 1, 0), dt * 0.25);
+      camera.position.copy(controls.target).add(off);
+    }
+    controls.update();
+    renderer.render(scene, camera);
+  });
+})();
+</script>

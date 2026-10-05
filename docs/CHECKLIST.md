@@ -5,7 +5,7 @@ Update this file after every work session.
 **Legend:** ✅ done · 🔲 to do · 🚧 in progress · ⛔ blocked (see the *Blocked* section for why)
 
 **Last updated:** 2026-10-02
-**Current phase:** Phase 0 + online research done → enough material to start Phase 1 (3D model) once Toni says go
+**Current phase:** Phase 1 — 3D model v1 done (`3d/models/bike.glb`). Next: refine with Toni's photos, then Phase 2 (3D garage in the app)
 
 ---
 
@@ -13,10 +13,9 @@ Update this file after every work session.
 
 | Item | Waiting on | Blocks |
 |---|---|---|
-| Download official reference media (360° video, studio photo, geometry drawing) | Toni's OK to download (list in [research/SOURCES.md](research/SOURCES.md#proposed-downloads-waiting-for-tonis-ok)) | Best 3D reference for Phase 1 |
-| Own photos of the bike (with my modifications) | Toni: no access to the bike for a few days. Take photos from the [photo checklist](#photo-checklist) | Final matching of the model + custom parts (**not** blocking the start of Phase 1 any more) |
+| Own photos of the bike (with my modifications) | Toni: no access to the bike for a few days. Take photos from the [photo checklist](#photo-checklist) | Model refinement: Toni's modifications + small details (v1 is built from official material) |
 | Checks on the real bike | Toni: [BIKE-SPECS.md → Measure on the real bike](BIKE-SPECS.md#measure-on-the-real-bike-) (fork decal XCR32/X1, stem length, crank length…) | Small details only |
-| Go-ahead for Phase 1 | Toni's OK | All building work |
+| Go-ahead for Phase 2 (3D garage in the app) | Toni's OK after reviewing model v1 | Phase 2 |
 
 ---
 
@@ -57,19 +56,25 @@ Update this file after every work session.
 
 - ✅ Size-L geometry and 3D coordinates (official)
 - ✅ Blender installed (5.2 LTS)
-- ⛔ Download official 360° video / studio photo (waiting for OK)
-- ⛔ Own photos and measurements (when Toni has the bike; not needed to start)
-- 🔲 Write the Blender script: frame from the size-L coordinates in BIKE-SPECS.md
-- 🔲 Model the fork (Suntour XCR32, 100 mm, A2C 501 mm, 32 mm stanchions, remote cable) with separate stanchions and lowers
-- 🔲 Model the wheels: 29" rims, 32 spokes, hubs, Rekon Race tyres with tread
-- 🔲 Model the drivetrain: 32T ring, Hollowtech crank, 10–51T cassette, chain, RD-M6100 derailleur, pedals
-- 🔲 Model the brakes: MT200 levers and calipers, 180/160 rotors, hoses
-- 🔲 Model the cockpit: 740 mm bar, stem, grips, shifter, lockout remote, headset
-- 🔲 Model the saddle (Belcarra), seatpost, seat clamp
-- 🔲 Materials: matte dark grey frame, neon-yellow SCOTT down-tube logo, gloss-black top-tube logo, neon-yellow grips, black fork, silver chain/cassette, black spokes, rubber
-- 🔲 Name every part to match the app slots (`frame`, `fork`, `chain`, `brake_front`, …)
-- 🔲 Export `3d/models/bike.glb`. Target < 10 MB, smooth on the Pixel 9 Pro
-- 🔲 Compare with the side photos, then adjust proportions
+- ✅ Official references downloaded (360° video + 25 extracted frames, studio photo, geometry drawing) → `photos/online-reference/scott-official/`
+- ✅ Generator script `3d/blender/build_bike.py` + `bikelib/` (see [3d/README.md](../3d/README.md))
+- ✅ Frame from the official coordinates: tapered/flared head tube, top tube, down tube, seat tube, chain- and seatstays, dropouts, hanger, BB92 shell, bottle bosses, cable ports
+- ✅ Decals: black down-tube panel with neon-yellow italic SCOTT (both sides), black SCOTT on the top tube, SR SUNTOUR on the fork, MAXXIS / REKON RACE on the tyres, SYNCROS on stem and seatpost, DEORE on the derailleur
+- ✅ Fork (XCR32): crown, black stanchions, thick lowers, arch over the tyre, post mount, lockout cap + remote and cable
+- ✅ Wheels: Syncros rims, 32 black spokes 3-cross with silver nipples, hubs, QR skewers; Rekon Race tyres with knobs
+- ✅ Drivetrain: 32T ring + 4-arm spider, 175 mm cranks, BB cups, 10–51T cassette, real chain path (ring → 10T cog → derailleur pulleys) with figure-8 links, RD-M6100 measured on the photo, flat pedals with orange reflectors
+- ✅ Brakes: MT200 levers, hoses routed into the frame, calipers with adapters, SM-RT10 rotors 180/160
+- ✅ Cockpit: stem 6°, 740 mm bar with 9° backsweep, neon grips, Deore shifter + housing, headset spacers and top cap
+- ✅ Saddle (Belcarra shape) on rails, seatpost, seat clamp
+- ✅ Materials matched to SCOTT's photos (metallic dark grey, neon yellow, black finishes, silver drivetrain)
+- ✅ Every part named exactly like the app's slots (23/23 checked against `SeedData.kt`), origins on rotation axes
+- ✅ Exported `3d/models/bike.glb`: 4.5 MB, ~136k triangles (target was < 10 MB)
+- ✅ Compared with the official side photo by overlay. Wheels, frame, fork angle, saddle height and chainring line up
+- ✅ Interactive review page (rotate, zoom, tap a part): (local page)
+- ✅ **Model v2 (more detail, requested by Toni):** fused/welded frame with gusset and weld fillets, cast fork crown + lowers, shaped tyre knobs (150 rows), real sprocket teeth, windowed cassette cogs on a spider, drilled rotors, spoke J-bends, valve, detailed levers/calipers/stem/shifter/grips, platform pedals with pins; ~330k triangles, 9.8 MB
+- 🔲 Toni reviews model v2
+- ⛔ Add Toni's modifications + check details against own photos (stem length, crank length, fork decal, grips)
+- 🔲 Polish later: derailleur body shape, optional Draco compression for the app
 
 ## Phase 2 — 3D garage scene in the app
 
@@ -151,6 +156,8 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-05 | Model v2: much more detailed mesh (fused welded frame, cast fork, shaped tread, real sprocket teeth, drilled rotors, detailed controls). Viewer updated to v2. |
+| 2026-10-02 | Phase 1: official references downloaded; Blender generator written; 3D model v1 built, checked against SCOTT's photo, exported to `3d/models/bike.glb` (23 named parts). |
 | 2026-10-02 | Online research: identified the exact bike (article 280483, Dark Grey), official spec + geometry, 3D coordinates, per-part research, official 360° video found. Docs: BIKE-SPECS.md rewritten, research/COMPONENTS.md, research/SOURCES.md. |
 | 2026-10-02 | Git set up, `CLAUDE.md` written. Phone connected. Blender 5.2 found. Blender MCP installed and tested. |
 | 2026-10-01 | Plan written. Stock spec researched. Android project, data layer and 2D prototype built (prototype UI will be replaced). Folder organized, checklist created. |
