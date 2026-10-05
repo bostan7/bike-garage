@@ -39,7 +39,7 @@ def _crown(part):
         mk.box(shape, mid, ((q - c).length * 1.05, 0.020, 0.030), None, rot=mk.basis(q - c, S.AXIS_UP))
     mk.box(shape, c + S.AXIS_FWD * 0.034 - up * 0.2, (0.026, 0.110, 0.024), None,
            rot=mk.basis(S.AXIS_FWD, S.AXIS_UP))                               # front bridge of the crown
-    part.add_bm(mk.fused(shape, voxel=0.0009, smooth=6, smooth_factor=0.5, ratio=0.10), M.get("black_matte"))
+    part.add_bm(mk.fused(shape, voxel=0.0008, smooth=4, smooth_factor=0.5, ratio=0.12), M.get("black_matte"))
     # pinch bolts at the back of each collar
     for side in (1.0, -1.0):
         q = leg_top(side)
@@ -77,7 +77,8 @@ def _lowers(part):
         mk.box(shape, p, (0.026, 0.016, 0.018), None, rot=rot)
     g = S.FRONT_AXLE + Y * (S.FORK_LEG_Y + 0.004) + S.AXIS_UP * 0.24 - S.AXIS_FWD * 0.020
     mk.box(shape, g, (0.012, 0.010, 0.022), None, rot=rot)
-    part.add_bm(mk.fused(shape, voxel=0.0011, smooth=8, smooth_factor=0.5, ratio=0.07), M.get("black_matte"))
+    # light smoothing keeps the legs full size (heavy smoothing shrinks them)
+    part.add_bm(mk.fused(shape, voxel=0.0009, smooth=3, smooth_factor=0.5, ratio=0.09), M.get("black_matte"))
     return tubes
 
 
@@ -125,10 +126,14 @@ def build(coll, bar_anchor):
             mk.cyl(part, bot, bot + S.AXIS_DOWN * 0.009, 0.0085, M.get("rebound_red"), n=24)
         # graphics on the outside of each lower
         lower = tubes[side]
-        _text_on_tube(part, lower, "SR SUNTOUR", 0.40, side * math.radians(80), 0.0080, 0.065, side,
+        # SR SUNTOUR low on the leg with dark grey slash graphics above it (SCOTT's photo); XCR 32 on the left leg
+        _text_on_tube(part, lower, "SR SUNTOUR", 0.26, side * math.radians(80), 0.0080, 0.065, side,
                       M.get("neon_yellow"), reverse=side > 0, lift=0.0007)
-        _text_on_tube(part, lower, "XCR 32", 0.72, side * math.radians(80), 0.0105, 0.060, side,
-                      M.get("tyre_text"), reverse=side > 0, lift=0.0007, italic=0.2)
+        _text_on_tube(part, lower, "///", 0.46, side * math.radians(80), 0.026, 0.048, side,
+                      M.get("decal_grey"), reverse=side > 0, lift=0.0007, italic=0.3)
+        if side > 0:
+            _text_on_tube(part, lower, "XCR 32", 0.72, side * math.radians(80), 0.0105, 0.060, side,
+                          M.get("tyre_text"), reverse=True, lift=0.0007, italic=0.2)
 
     # remote lockout lever (left of the stem, under the bar) and its cable to the lockout cap
     r = bar_anchor(1.0)

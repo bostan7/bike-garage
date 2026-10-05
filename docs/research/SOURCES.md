@@ -37,6 +37,9 @@ Saved to `photos/online-reference/shimano-drivetrain/` (local only, not in git):
 Saved to `photos/online-reference/buycycle-scale980-2022-L/`: all 25 photos of the used 2022 Scale 980 L listing below (drivetrain on this exact frame; its chain and cassette were replaced, tyres are Rekon Race 29×2.25 Tan Wall).
 The most useful drivetrain reference is SCOTT's own studio side photo (`scott-official/280483_1699164_png_zoom_11.jpg`): true side view at 1.0415 px/mm, used to trace the derailleur, crank spider and arm in mm.
 
+## Fork references (pass 3)
+Saved to `photos/online-reference/suntour-xcr32/` (local only): aftermarket XCR 32 / XCR coil forks and the XCR lockout lever (velomine, northwestbicycle Shopify JSON). Shapes only: aftermarket decals are blue, Toni's OEM fork follows SCOTT's photo (neon-yellow SR SUNTOUR low on the legs, dark grey slash graphics).
+
 ## Real-world photos (other owners)
 - buycycle: used **2022 Scale 980, size L, XCR32**, 25 photos (listing marked deleted/sold, photos still visible; tyres changed to tan wall): https://buycycle.com/en-de/product/scale-980-2022-57579
 - buycycle: used 2021 Scale 980: https://buycycle.com/en-ee/product/scale-980-2021-50570

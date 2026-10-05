@@ -95,7 +95,7 @@ Origin = BB centre, +x forward, +y up. Computed from the official table above; u
 | Saddle height (BB centre → top of saddle) | — | ___ |
 | Handlebar width (cut?) | 740 mm | ___ |
 | Grip model | Syncros, neon yellow | ___ |
-| Seat clamp | 34.9 mm, QR or bolt? | ___ |
+| Seat clamp | 34.9 mm, QR or bolt? | **QR lever** (Toni, 2026-10-05) |
 | Rear brake mount | post mount (160) on the frame? | ___ |
 | Purchase date / odometer | — | ___ |
 

@@ -32,7 +32,8 @@ def build_seatpost(coll):
     for dx in (-0.020, 0.020):
         mk.cyl(part, head + X * dx + Z * -0.004, head + X * dx + Z * 0.022, 0.0035, steel, n=10)
         mk.cyl(part, head + X * dx + Z * -0.004, head + X * dx + Z * -0.008, 0.0050, steel, n=6)
-    # seat clamp (34.9 mm) with slot and bolt
+    # seat clamp (34.9 mm), quick release: skewer through the ears at the back, cam lever on the drive side
+    # wrapping forward along the collar; its flat paddle sticks out in front of the seat tube (SCOTT's photo)
     clamp = mk.scratch()
     mk.revolve(clamp, Vector((0, 0, 0)), [(0.0162, 0.0), (0.0210, 0.0), (0.0215, 0.0060), (0.0210, 0.0120),
                                           (0.0162, 0.0120)], None, n=48)
@@ -41,8 +42,19 @@ def build_seatpost(coll):
     part.add_bm(clamp.bm, gloss, free=False)
     lug = S.ST_TOP + S.SEAT_DIR * 0.002 - st_front * 0.024
     mk.box(part, lug, (0.010, 0.016, 0.012), gloss, rot=mk.basis(st_front, S.SEAT_DIR))
-    mk.cyl(part, lug + Y * 0.012, lug - Y * 0.012, 0.0030, steel, n=10)
-    mk.cyl(part, lug - Y * 0.012, lug - Y * 0.015, 0.0045, steel, n=6)
+    mk.cyl(part, lug + Y * 0.012, lug - Y * 0.012, 0.0024, steel, n=10)                    # skewer
+    mk.cyl(part, lug + Y * 0.012, lug + Y * 0.017, 0.0050, black, r2=0.0045, n=16)          # nut (left)
+    mk.cyl(part, lug - Y * 0.010, lug - Y * 0.018, 0.0065, black, n=24)                     # cam (drive side)
+    lever = mk.scratch()
+    pts, prof = [], []
+    for k in range(9):                       # handle follows the collar from the cam to past its front
+        t = k / 8
+        ang = math.radians(180 - 170 * t)
+        r = 0.0255 + 0.014 * t
+        pts.append(S.ST_TOP + S.SEAT_DIR * 0.005 + st_front * (r * math.cos(ang)) - Y * (0.0185 + 0.004 * math.sin(ang)))
+        prof.append((0.0045 + 0.0020 * t, 0.0016 + 0.0006 * t))     # tall and thin, paddle wider at the tip
+    mk.tube_path(lever, pts, prof, None, n=10, ref=S.SEAT_DIR, power=3.0)
+    part.add_bm(mk.subdivided(lever, 1), black)
     # Syncros logo running down the drive side of the post
     probe = mk._text_mesh("SYNCROS", 1.0, 0.0)
     xs = [v.co.x for v in probe.vertices]

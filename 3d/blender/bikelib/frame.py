@@ -8,6 +8,7 @@ import math
 
 import bpy
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 from . import materials as M
 from . import meshkit as mk
@@ -72,15 +73,14 @@ def _text_on_tube(part, tube, text, s_center, angle_center, height, length, side
 # ----------------------------------------------------------------------------------- geometry
 
 def _tubes():
-    head = StraightTube(S.on_axis(-3), S.on_axis(S.HT_LEN + 1),
-                        [(0.0, (0.0300, 0.0300)), (0.45, (0.0305, 0.0305)), (0.80, (0.0335, 0.0340)),
-                         (1.0, (0.0390, 0.0395))])
+    head = StraightTube(S.on_axis(-3), S.on_axis(S.HT_LEN + 1),       # smooth taper, as in SCOTT's photo
+                        [(0.0, (0.0275, 0.0280)), (0.50, (0.0298, 0.0303)), (1.0, (0.0345, 0.0352))])
     top = StraightTube(S.on_seat_axis(S.SEAT_TUBE - S.TT_AT_ST), S.on_axis(S.TT_AT_HT),
                        [(0.0, (0.0175, 0.0185)), (0.20, (0.0165, 0.0170)), (0.70, (0.0180, 0.0175)),
                         (0.90, (0.0215, 0.0215)), (1.0, (0.0250, 0.0270))])
     down = StraightTube(S.BB, S.on_axis(S.DT_AT_HT),
                         [(0.0, (0.0250, 0.0270)), (0.10, (0.0290, 0.0285)), (0.55, (0.0300, 0.0300)),
-                         (0.85, (0.0320, 0.0360)), (1.0, (0.0305, 0.0440))])
+                         (0.75, (0.0310, 0.0328)), (0.90, (0.0314, 0.0385)), (1.0, (0.0308, 0.0440))])
     seat = StraightTube(S.on_seat_axis(-14), S.ST_TOP,
                         [(0.0, (0.0235, 0.0235)), (0.20, (0.0195, 0.0200)), (0.85, (0.0175, 0.0175)),
                          (1.0, (0.0180, 0.0180))])
@@ -99,16 +99,57 @@ def _bead(part, tube, s, extra=0.0016, n=36):
     mk.tube_path(part, ring, (extra, extra), None, n=8, caps=False)
 
 
+def _dime(shape, bvh, p, across):
+    """One ripple of a TIG bead, snapped onto the welded surface."""
+    loc, nrm, _, _ = bvh.find_nearest(p)
+    if loc is None:
+        return
+    across = (across - nrm * across.dot(nrm)).normalized()
+    mk.ellipsoid(shape, loc + nrm * 0.0003, (0.0026, 0.0012, 0.0011), None, rot=mk.basis(across, nrm), segs=6, rings=4)
+
+
+def _weld_ripples(shape, bvh, tube, s, extra, pitch=0.0015):
+    """Rippled TIG bead ("stack of dimes") around a tube where it meets another tube."""
+    w, h = tube.size(s)
+    c = tube.point(s)
+    n = max(24, int(2 * math.pi * ((w + h) / 2 + extra) / pitch))
+    for k in range(n):
+        a = 2 * math.pi * k / n
+        p = c + tube.n * ((h + extra * 0.5) * math.cos(a)) + tube.bv * ((w + extra * 0.5) * math.sin(a))
+        _dime(shape, bvh, p, tube.t)
+
+
+def _head_tube_seam(shape, bvh, head, side, pitch=0.0015):
+    """The front section (top + down tube) is welded to the head tube with one seam down each side,
+    curving back at the top and bottom (SCOTT's photo)."""
+    pts = []
+    for i in range(121):
+        s = 0.06 + 0.86 * i / 120
+        th = side * math.radians(138 + 26 * (2 * s - 1) ** 4)
+        pts.append(head.surface(s, th, 0.0004))
+    length = sum((b - a).length for a, b in zip(pts, pts[1:]))
+    n = int(length / pitch)
+    acc, j = 0.0, 0
+    for k in range(n):
+        target = k * pitch
+        while j < len(pts) - 2 and acc + (pts[j + 1] - pts[j]).length < target:
+            acc += (pts[j + 1] - pts[j]).length
+            j += 1
+        seg = pts[j + 1] - pts[j]
+        p = pts[j] + seg * ((target - acc) / max(seg.length, 1e-9))
+        nrm = (p - head.point(max(0.0, min(1.0, (p - head.a).dot(head.t) / head.length)))).normalized()
+        _dime(shape, bvh, p, nrm.cross(seg.normalized()))
+
+
 def _structure(shape):
     head, top, down, seat = _tubes()
-    for t in (head, top, down, seat):
+    for t in (top, down, seat):
         t.build(shape, None, n=40)
+    head.build(shape, None, n=48, power=2.2)
     # head-tube gusset filling the corner between top tube and down tube
     g = S.on_axis(52) - S.AXIS_FWD * 0.020
     mk.ellipsoid(shape, g, (0.050, 0.024, 0.030), None, rot=mk.basis(S.AXIS_UP, -S.AXIS_FWD), segs=32, rings=16)
-    # weld beads
-    _bead(shape, top, 0.955)
-    _bead(shape, down, 0.925)
+    # weld beads (the head tube gets one seam down each side instead, added after fusing)
     _bead(shape, top, 0.03, extra=0.0013)
     _bead(shape, down, 0.03, extra=0.0016)
     # seat tube collar and BB92 shell
@@ -163,7 +204,8 @@ def build(coll):
 
     shape = mk.scratch()
     head, top, down, seat = _structure(shape)
-    body = mk.fused(shape, voxel=0.0013, smooth=8, smooth_factor=0.5, ratio=0.09)
+    body = mk.fused(shape, voxel=0.0011, smooth=8, smooth_factor=0.5, ratio=0.075)
+    bvh = BVHTree.FromBMesh(body)
     target = mk.bm_to_object(body.copy(), "frame_surface")
     part.add_bm(body, grey)
 
@@ -220,6 +262,17 @@ def build(coll):
     front = head.surface(0.40, 0.0, 0.0015)
     mk.add_text(layer(black), "S", 1.0, 0.0, black,
                 lambda v: front + S.AXIS_UP * (v.y * 0.034) + Y * ((v.x + 0.3 * v.y) * 0.030))
+
+    # seat tube rear: model number
+    _text_on_tube(layer(black), seat, "980", 0.80, math.pi, 0.012, 0.034, 0, black)
+
+    # TIG weld seams ("stack of dimes") over the smooth weld fillets
+    ripples = mk.scratch()
+    for tube, s, extra in ((top, 0.03, 0.0013), (down, 0.03, 0.0016)):
+        _weld_ripples(ripples, bvh, tube, s, extra)
+    for side in (1.0, -1.0):
+        _head_tube_seam(ripples, bvh, head, side)
+    part.add_bm(ripples.bm, grey)
 
     # stacked layers so decals never fight for the same depth: panel < stripes < letters
     offsets = {black: 0.0006, stripe: 0.0010, yellow: 0.0013}
