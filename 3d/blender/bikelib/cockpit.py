@@ -157,7 +157,11 @@ def build_shifter(coll):
             port - Y * 0.02 + Z * 0.03, port]
     mk.curve_tube(part, ctrl, 0.0025, gloss, samples=12, n=10)
     cs_exit = S.P(S.REAR_X + 70, S.BB_DROP + 4, -70)
-    rd_entry = S.REAR_AXLE + X * -0.026 + Z * -0.018 - Y * 0.086
-    mk.curve_tube(part, [cs_exit, cs_exit + X * -0.03 + Y * -0.012 + Z * -0.012,
-                         rd_entry + X * 0.03 + Z * -0.005, rd_entry], 0.0025, gloss, samples=10, n=10)
+    # loops up and back over the cassette into the end of the derailleur's bracket arm (SCOTT's photo)
+    ra = S.REAR_AXLE
+    loop = [ra + Vector((x * 0.001, y, z * 0.001)) for x, z, y in
+            ((48, -2, -0.080), (14, 19, -0.084), (-18, 28, -0.086), (-42, 24, -0.087), (-55, 8, -0.087),
+             (-57, -14, -0.087))]
+    mk.curve_tube(part, [cs_exit, cs_exit + X * -0.02 + Y * -0.008 + Z * -0.016] + loop, 0.0025, gloss,
+                  samples=10, n=10)
     return part.finish(coll, sharp_angle=50.0)

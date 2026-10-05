@@ -29,6 +29,14 @@ Saved to `photos/online-reference/maxxis-rekon-race/` (local only, not in git):
 - Shop photos of the Tan Wall 2.35: `shop_thelostco_tan.jpg`, `shop_northwest_tan.jpg`, `shop_veloplus_tan.webp`, `shop_mtbdirect_tan.jpg` (2.4)
 - bicyclerollingresistance.com test (black 2.25; knob heights, side views): `brr_1-3.jpg`, https://www.bicyclerollingresistance.com/mtb-reviews/maxxis-rekon-race-exo-tr
 
+## Drivetrain references (pass 2)
+Saved to `photos/online-reference/shimano-drivetrain/` (local only, not in git):
+- velomine / playtristore / mtbdirect / thelostco product photos (Shopify `products/<handle>.json`): `rd-m6100_*.jpg`, `cs-m6100_1.jpg`, `kmc-x12_*.jpg`, `missinglink12_lost_1.jpg`, `chainring32t_*.jpg` (FC-MT510/511 32T ring), `fc-mt511_leftarm_1.jpg`
+- buycycle used FC-MT511 crankset (175 mm, 32T), 6 photos: `fc-mt511_used_*.webp`, https://buycycle.com/en-hu/product/crank-shimano-fc-mt511-crankset
+- Shimano exploded view EV-FC-MT511-1 (si.shimano.com) blocks downloads (403)
+Saved to `photos/online-reference/buycycle-scale980-2022-L/`: all 25 photos of the used 2022 Scale 980 L listing below (drivetrain on this exact frame; its chain and cassette were replaced, tyres are Rekon Race 29×2.25 Tan Wall).
+The most useful drivetrain reference is SCOTT's own studio side photo (`scott-official/280483_1699164_png_zoom_11.jpg`): true side view at 1.0415 px/mm, used to trace the derailleur, crank spider and arm in mm.
+
 ## Real-world photos (other owners)
 - buycycle: used **2022 Scale 980, size L, XCR32**, 25 photos (listing marked deleted/sold, photos still visible; tyres changed to tan wall): https://buycycle.com/en-de/product/scale-980-2022-57579
 - buycycle: used 2021 Scale 980: https://buycycle.com/en-ee/product/scale-980-2021-50570

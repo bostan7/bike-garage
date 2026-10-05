@@ -407,14 +407,15 @@ def wrapped(shape, target_ob, offset=0.0007):
                                                  "wrap_mode": "OUTSIDE_SURFACE", "offset": offset})])
 
 
-def plate2d(outline, holes=(), thickness=0.002, bevel=0.0):
-    """Flat plate from a 2-D outline with real holes (curve fill). Local: XY plane, thickness along Z (centred)."""
+def plate2d(outline, holes=(), thickness=0.002, bevel=0.0, bevel_res=1):
+    """Flat plate from a 2-D outline with real holes (curve fill). Local: XY plane, thickness along Z (centred).
+    bevel rounds the edges; bevel_res 0 = a single chamfer, higher = rounder."""
     cu = bpy.data.curves.new("tmp_plate", 'CURVE')
     cu.dimensions = '2D'
     cu.fill_mode = 'BOTH'
     cu.extrude = thickness / 2
     cu.bevel_depth = bevel
-    cu.bevel_resolution = 1
+    cu.bevel_resolution = bevel_res
     cu.resolution_u = 1
     for loop in [outline, *holes]:
         sp = cu.splines.new('POLY')
@@ -499,6 +500,37 @@ def capsule_outline(a, b, r, n=10):
         t = ang - math.pi / 2 + math.pi * k / n
         pts.append((b[0] + r * math.cos(t), b[1] + r * math.sin(t)))
     return pts
+
+
+def rounded_poly(points, radius, n=4):
+    """Polygon (2-D, either winding) with every corner replaced by an arc of `radius` (smaller where the
+    neighbouring edges are short). Used for traced outlines of cast or forged parts."""
+    out = []
+    m = len(points)
+    for i in range(m):
+        p0, p1, p2 = Vector(points[i - 1]), Vector(points[i]), Vector(points[(i + 1) % m])
+        a, b = (p0 - p1), (p2 - p1)
+        la, lb = a.length, b.length
+        if la < 1e-9 or lb < 1e-9:
+            continue
+        a, b = a / la, b / lb
+        cos_t = max(-1.0, min(1.0, a.dot(b)))
+        half = math.acos(cos_t) / 2
+        if half < 1e-3 or abs(half - math.pi / 2) < 1e-3:
+            out.append((p1.x, p1.y))
+            continue
+        r = min(radius, 0.45 * min(la, lb) * math.tan(half))
+        d = r / math.tan(half)                       # distance from the corner to the tangent points
+        t0, t1 = p1 + a * d, p1 + b * d
+        bis = (a + b).normalized()
+        centre = p1 + bis * (r / math.sin(half))
+        a0 = math.atan2(t0.y - centre.y, t0.x - centre.x)
+        a1 = math.atan2(t1.y - centre.y, t1.x - centre.x)
+        sweep = (a1 - a0 + math.pi) % (2 * math.pi) - math.pi
+        for k in range(n + 1):
+            t = a0 + sweep * k / n
+            out.append((centre.x + r * math.cos(t), centre.y + r * math.sin(t)))
+    return out
 
 
 def tri_count(part):

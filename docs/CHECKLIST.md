@@ -14,7 +14,7 @@ Update this file after every work session.
 | Item | Waiting on | Blocks |
 |---|---|---|
 | Own photos of the bike (with my modifications) | Toni: no access to the bike for a few days. Take photos from the [photo checklist](#photo-checklist) | Model refinement: Toni's modifications + small details (v1 is built from official material) |
-| Checks on the real bike | Toni: [BIKE-SPECS.md → Measure on the real bike](BIKE-SPECS.md#measure-on-the-real-bike-) (fork decal XCR32/X1, stem length, crank length…) | Small details only |
+| Checks on the real bike | Toni: [BIKE-SPECS.md → Measure on the real bike](BIKE-SPECS.md#measure-on-the-real-bike-) (fork decal XCR32/X1, stem length, **crank length: Toni thinks 175 mm, to check (stamped inside the arm)**, valve type Presta/Schrader…) | Small details only |
 | Go-ahead for Phase 2 (3D garage in the app) | Toni's OK after reviewing model v1 | Phase 2 |
 
 ---
@@ -77,7 +77,7 @@ Update this file after every work session.
   - ✅ Detail setting (`DETAIL` / `DETAIL_PER_PART` in `spec.py`) + per-part budget report in `build_bike.py`
   - ✅ Pass 1: wheels and tyres (2.35 Rekon Race EXO TR, new casing, knobs, sidewall text; rim, nipples, hubs, QR, valve). Viewer republished
   - ✅ Pass 1 fix (Toni: "tyres not accurate"): tyres rebuilt from 14 downloaded Maxxis/shop photos as the **Tan Wall** version (TB00219800, 60 TPI): tan sidewalls, real tread pattern, real sidewall graphics. Tyre budget raised to 62k each. Total now 427k
-  - 🔲 Pass 2: drivetrain (chain, cassette, crankset, derailleur, BB)
+  - ✅ Pass 2: drivetrain (chain, cassette, crankset, derailleur, BB). Toni: all stock, 175 mm cranks (to check), chain on 10T. Shapes traced in mm on SCOTT's side photo (asymmetric 96 BCD spider, FC-MT511 arms, KMC X12 + MissingLink, CS-M6100 windows/ramps/spacers, RD-M6100 body/DEORE plate/clutch/cage/guard). Rendered on Toni's "render": fixed folded cog chamfers, RD body shape, guard openings, spindle end. 461k total, 14.5 MB. Viewer republished. Also: tyre REKON RACE font → Rockwell Extra Bold, black band under the knobs; shift housing rerouted into the RD bracket arm. **Rule from Toni: render only when he says so**
   - 🔲 Pass 3: frame and fork
   - 🔲 Pass 4: brakes and cockpit
   - 🔲 Pass 5: saddle, seatpost, pedals (⛔ pedal shape needs Toni's photos)
@@ -164,6 +164,8 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-05 | Pass 2 rendered on Toni's request and compared with SCOTT's side photo (same-scale crops): fixes to cassette, derailleur, crank; exported and viewer republished. 461k triangles. |
+| 2026-10-05 | Pass 1 committed (56f805c). Pass 2 started: questions answered (all stock, 175 mm to check, chain on 10T, download references), drivetrain references downloaded, drivetrain rewritten from shapes traced on SCOTT's side photo. Built without rendering (Toni's rule: render only when he says). |
 | 2026-10-05 | Tyres rebuilt as Rekon Race 29×2.35 **Tan Wall** from Maxxis photos (downloaded to `photos/online-reference/maxxis-rekon-race/`): tan sidewalls, measured 3-row tread, REKON RACE / EXO / TR / MAXXIS graphics. TPI answered: Tan Wall 2.35 only comes in 60 TPI. Viewer republished. |
 | 2026-10-05 | Model v3 pass 1 (wheels & tyres): Toni's 29×2.35 Rekon Race EXO TR tyres (2nd-hand, Vinted €27.80, ~600 km, inner tubes) modelled; detail setting + budget report added; viewer now loads the model from text chunks (too big to embed). 407k triangles. |
 | 2026-10-05 | Planned model v3: measured v2 per part (329,884 triangles), made a per-part budget of ~580k with the details to add. No code changed. |

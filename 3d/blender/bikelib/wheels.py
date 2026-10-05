@@ -170,7 +170,8 @@ TYRE_AR = S.TYRE_R - 0.0022 - TYRE_RC    # crown height above it (centre knobs a
 TYRE_AY = S.TYRE_HALF_W
 BEAD = (0.3180, 0.0143)                  # where the tyre meets the top of the rim hook
 TOE = [(0.3110, 0.0110), (0.3150, 0.0128)]  # bead toe, hidden inside the rim
-TAN_FROM = math.radians(74)              # crown angle (0 = top of the tread) where the black tread rubber ends
+TAN_FROM = math.radians(80)              # crown angle (0 = top of the tread) where the black tread rubber ends
+                                         # (a black band runs ~3 mm below the shoulder knobs)
 MM = 0.001
 FONTS = "C:/Windows/Fonts/"
 
@@ -350,16 +351,16 @@ def _panel(part, c, a_mid, side, s_mm, r_mm, length_mm, height_mm, lift_mm, mat,
 def _sidewall_graphics(part, c, a_mid, side):
     white, black, red = M.get("tyre_text"), M.get("decal_black"), M.get("exo_red")
     outlined = [(0.07, 0.30, black), (0.0, 0.45, white)]
-    _logo(part, c, a_mid, side, "REKON RACE", -61, 336.5, 13.0, 150, outlined, "BERNHC.TTF", shear=0.22)
-    _logo(part, c, a_mid, side, "29X2.35", 35, 339.5, 3.8, 24, [(0.0, 0.30, black)], "arialbd.ttf")
-    _logo(part, c, a_mid, side, "60 PSI", 35, 334.0, 3.8, 17, [(0.0, 0.30, black)], "arialbd.ttf")
-    _panel(part, c, a_mid, side, 76, 337.0, 36, 14.0, 0.25, black)
-    _panel(part, c, a_mid, side, 76, 332.3, 34, 3.6, 0.35, red)
-    _logo(part, c, a_mid, side, "EXO", 76, 339.8, 7.0, 20, [(0.0, 0.45, white)], "FRAHVIT.TTF")
-    _logo(part, c, a_mid, side, "PROTECTION", 76, 332.3, 2.2, 28, [(0.0, 0.50, white)], "arialbd.ttf")
-    _logo(part, c, a_mid, side, "TR", 119, 337.8, 8.5, 26, outlined, "ariblk.ttf", shear=0.25)
-    _logo(part, c, a_mid, side, "TUBELESS READY", 119, 331.8, 2.4, 34, [(0.0, 0.30, red)], "arialbd.ttf")
-    _logo(part, c, a_mid + math.pi, side, "MAXXIS", 0, 338.0, 11.0, 120, [(0.06, 0.30, black), (0.0, 0.45, white)],
+    _logo(part, c, a_mid, side, "REKON RACE", -61, 335.5, 12.0, 150, outlined, "ROCKEB.TTF", shear=0.12)
+    _logo(part, c, a_mid, side, "29X2.35", 35, 338.6, 3.8, 24, [(0.0, 0.30, black)], "arialbd.ttf")
+    _logo(part, c, a_mid, side, "60 PSI", 35, 333.1, 3.8, 17, [(0.0, 0.30, black)], "arialbd.ttf")
+    _panel(part, c, a_mid, side, 76, 336.0, 36, 13.0, 0.25, black)
+    _panel(part, c, a_mid, side, 76, 331.6, 34, 3.4, 0.35, red)
+    _logo(part, c, a_mid, side, "EXO", 76, 338.6, 6.6, 20, [(0.0, 0.45, white)], "FRAHVIT.TTF")
+    _logo(part, c, a_mid, side, "PROTECTION", 76, 331.6, 2.1, 28, [(0.0, 0.50, white)], "arialbd.ttf")
+    _logo(part, c, a_mid, side, "TR", 119, 336.8, 8.5, 26, outlined, "ariblk.ttf", shear=0.25)
+    _logo(part, c, a_mid, side, "TUBELESS READY", 119, 330.9, 2.4, 34, [(0.0, 0.30, red)], "arialbd.ttf")
+    _logo(part, c, a_mid + math.pi, side, "MAXXIS", 0, 336.5, 10.5, 120, [(0.06, 0.30, black), (0.0, 0.45, white)],
           "ariblk.ttf", space=1.35)
 
 

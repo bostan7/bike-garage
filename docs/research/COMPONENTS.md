@@ -68,6 +68,7 @@ What each part looks like and its key measurements (for the 3D model), plus usef
 ### `crankset` — Shimano FC-MT511-1, 32T
 - ✅ (Shimano) 2-piece Hollowtech-II-style 24 mm spindle, **4-arm spider, 96 mm BCD**, **52 mm chainline** (Boost), **Q-factor 178.5 mm**, arm lengths 165/170/175 (🔍 likely 175 on L), Dynamic Chain Engagement+ narrow-wide ring, black.
 - **Look:** black arms, black 32T narrow-wide ring with silver bolts.
+- ✅ (traced on SCOTT's side photo + used-part photos) Straight tapered arms with a raised pointed face panel and SHIMANO lettering; 4-arm spider integrated in the drive arm, **Shimano asymmetric 96 BCD** (bolts at ±55° around the arm and around the opposite direction → gaps of ~70° and ~110°); ring marked "12S 32T" with slots in its band; left arm with split clamp and two pinch bolts. Spindle is silver steel.
 
 ### `bottom_bracket` — Shimano BB-MT500-PA
 - ✅ Press-fit BB92 (41 × 89.5 mm shell), for 24 mm spindles. Needs a bearing press to replace.
@@ -83,6 +84,7 @@ What each part looks like and its key measurements (for the 3D model), plus usef
 
 ### `derailleur` — Shimano Deore RD-M6100 SGS
 - ✅ 12-speed, long cage (SGS), Shadow RD+ clutch, max cog 51T, total capacity 41T, **13T pulleys**. Black and grey with a "DEORE" logo.
+- ✅ Look (product photos + SCOTT side photo): dark grey body with an iridescent DEORE logo, silver B-axle cap, bracket arm with the cable stop at its end (the shift housing loops over the cassette into it), H/L limit screws, black clutch housing with a round SHIMANO cap and ON/OFF lever, black outer cage with three slot windows and a big guard around the lower pulley with round cut-outs.
 
 ### `pedals` — Femin/Feimin FP873ZU
 - ✅ Flat platform pedals (SCOTT's photos and weight exclude pedals). Looks: 🔍 photos needed.

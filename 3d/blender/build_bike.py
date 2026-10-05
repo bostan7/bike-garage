@@ -72,7 +72,7 @@ def build():
 # Model v3 triangle budget per part (agreed with Toni 2026-10-05: ~580k; tyres raised to 62k each for the
 # accurate Rekon Race Tan Wall tread and sidewall graphics)
 BUDGET = {"frame": 110_000, "fork": 60_000, "tire_front": 62_000, "tire_rear": 62_000, "wheel_front": 30_000,
-          "wheel_rear": 30_000, "chain": 40_000, "cassette": 35_000, "crankset": 25_000, "derailleur": 25_000,
+          "wheel_rear": 30_000, "chain": 40_000, "cassette": 45_000, "crankset": 18_000, "derailleur": 22_000,
           "brake_front": 15_000, "brake_rear": 15_000, "rotor_front": 10_000, "rotor_rear": 10_000,
           "saddle": 20_000, "pedals": 15_000, "grips": 10_000, "handlebar": 8_000, "stem": 8_000,
           "shifter": 8_000, "seatpost": 6_000, "headset": 4_000, "bottom_bracket": 3_000}

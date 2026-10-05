@@ -19,6 +19,8 @@ PALETTE = {
     "tyre_text":      ((0.80, 0.81, 0.83), 0.0, 0.50),       # MAXXIS sidewall lettering
     "tanwall":        ((0.30, 0.16, 0.08), 0.0, 0.62),       # Rekon Race Tan Wall sidewall (Maxxis photo: warm orange-brown)
     "exo_red":        ((0.62, 0.05, 0.02), 0.0, 0.45),       # EXO PROTECTION band, TUBELESS READY text
+    "deore_grey":     ((0.055, 0.057, 0.062), 0.65, 0.32),   # RD-M6100 body (dark grey aluminium)
+    "deore_logo":     ((0.52, 0.53, 0.62), 0.85, 0.22),      # DEORE lettering (silver with a violet sheen)
     "reflector":      ((1.0, 0.30, 0.01), 0.0, 0.30),        # pedal reflectors
     "rebound_red":    ((0.55, 0.03, 0.04), 0.3, 0.40),       # fork rebound knob
 }

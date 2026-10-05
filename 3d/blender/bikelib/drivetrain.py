@@ -1,5 +1,8 @@
 """Drivetrain: FC-MT511-1 32T crankset, BB-MT500-PA, KMC X12 chain, CS-M6100-12 10-51T cassette,
-RD-M6100-SGS derailleur, Feimin flat pedals."""
+RD-M6100-SGS derailleur, Feimin flat pedals.
+
+Shapes follow the reference photos in photos/online-reference/ (shimano-drivetrain/, buycycle-scale980-2022-L/)
+and are placed with points traced on SCOTT's studio side photo (mm from the rear axle or the BB)."""
 import math
 
 import bpy
@@ -9,6 +12,9 @@ from . import materials as M
 from . import meshkit as mk
 from . import spec as S
 from .meshkit import Part, X, Y, Z
+
+MM = 0.001
+FONTS = "C:/Windows/Fonts/"
 
 
 def _crank_dir(angle_deg):
@@ -21,107 +27,208 @@ def pedal_points():
     return (S.BB + d * S.CRANK_LEN - Y * S.Q_HALF, S.BB - d * S.CRANK_LEN + Y * S.Q_HALF)
 
 
-ARM_KEYS = [(0.0, (0.0095, 0.0235)), (0.18, (0.0088, 0.0180)), (0.65, (0.0080, 0.0145)), (1.0, (0.0078, 0.0132))]
+def _axle_plate(part, outline_mm, y, thickness, mat, holes_mm=(), bevel=0.0, bevel_res=1, origin=None):
+    """Plate drawn in mm in the bike plane (x forward, z up) around `origin` (default: rear axle),
+    centred at lateral position y."""
+    o = origin if origin is not None else S.REAR_AXLE
+    conv = lambda p: (o.x + p[0] * MM, o.z + p[1] * MM)          # noqa: E731
+    bm = mk.plate2d([conv(p) for p in outline_mm], [[conv(p) for p in h] for h in holes_mm],
+                    thickness=thickness, bevel=bevel, bevel_res=bevel_res)
+    mk.place(bm, Vector((0.0, y, 0.0)), X, Z, -Y)
+    return part.add_bm(bm, mat)
 
 
-def _text_on_arm(part, a, b, side, text, height, length, mat):
-    """Lettering on the outer face of a crank arm (side -1 drive, +1 left), following its slant and taper."""
-    probe = mk._text_mesh(text, 1.0, 0.0)
-    xs = [v.co.x for v in probe.vertices]
-    bpy.data.meshes.remove(probe)
-    sx = length / (max(xs) - min(xs))
-    arm_len = (b - a).length
-    d = Vector((b.x - a.x, 0.0, b.z - a.z)).normalized()
-    up = Vector((-d.z, 0.0, d.x))
-    flip = -1.0 if side > 0 else 1.0           # keep the text readable from each side
-
-    def xform(v):
-        s = 0.55 + flip * (v.x * sx) / arm_len
-        w = mk.interp_keys(ARM_KEYS, s)[0]
-        c = a.lerp(b, s)
-        return Vector((c.x, c.y + side * (w + 0.0004), c.z)) + up * (v.y * sx)
-    mk.add_text(part, text, 1.0, 0.0, mat, xform)
+def _ax(x_mm, z_mm, y):
+    return Vector((S.REAR_AXLE.x + x_mm * MM, y, S.REAR_AXLE.z + z_mm * MM))
 
 
 # --------------------------------------------------------------------------------- crankset
+# FC-MT511-1 (traced on SCOTT's photo): straight tapered arms with a raised, pointed face panel and
+# SHIMANO on it; the drive arm carries a 4-arm spider (Shimano asymmetric 96 BCD: bolts at +-55 deg around
+# the arm and around the opposite direction); 32T narrow-wide ring with slots in its band.
+
+SPIDER_BOLTS = (55.0, -55.0, 125.0, -125.0)   # bolt angles relative to the drive arm
+BCD_R = 0.048
+ARM_T = 0.014                                  # arm thickness (lateral)
+
+
+def _arm_outline(L):
+    return mk.hull2d(mk.circle_pts(0.0, 0.0, 0.0200, 40) + mk.circle_pts(L, 0.0, 0.0128, 32))
+
+
+def _facet_outline(L):
+    pts = [(0.034, 0.0), (0.058, 0.0090), (L - 0.030, 0.0074), (L - 0.021, 0.0), (L - 0.030, -0.0074), (0.058, -0.0090)]
+    return mk.rounded_poly(pts, 0.0035, n=3)
+
+
+def _arm_mapper(side, d):
+    """(u along the arm, v across it, w outwards) -> world. The arm leans out from the BB to the pedal."""
+    up = Vector((-d.z, 0.0, d.x)) * (1.0 if side < 0 else -1.0)   # keeps the left arm's text readable
+    y0, y1 = 0.0645, S.Q_HALF - 0.0085
+
+    def f(u, v, w):
+        return S.BB + d * u + up * v + Y * (side * (y0 + (y1 - y0) * u / S.CRANK_LEN + w))
+    return f
+
+
+def _mapped(bm, f, w_shift=0.0):
+    for vert in bm.verts:
+        u, v, w = vert.co
+        vert.co = f(u, v, w + w_shift)
+    return bm
+
+
+def _arm(part, side, d, mat):
+    f = _arm_mapper(side, d)
+    L = S.CRANK_LEN
+    part.add_bm(_mapped(mk.plate2d(_arm_outline(L), thickness=ARM_T, bevel=0.0022, bevel_res=2), f), mat)
+    facet = mk.plate2d(_facet_outline(L), thickness=0.0012, bevel=0.0004, bevel_res=1)
+    part.add_bm(_mapped(facet, f, ARM_T / 2 + 0.0016), mat)
+    # SHIMANO on the panel, towards the pedal
+    probe = mk._text_mesh("SHIMANO", 1.0, 0.0, FONTS + "arialbd.ttf")
+    xs = [v.co.x for v in probe.vertices]
+    bpy.data.meshes.remove(probe)
+    sx = 0.027 / (max(xs) - min(xs))
+    w_txt = ARM_T / 2 + 0.0016 + 0.0006 + 0.0006
+    mk.add_text(part, "SHIMANO", 1.0, 0.0, M.get("tyre_text"),
+                lambda v: f(0.100 + v.x * sx, v.y * sx, w_txt), FONTS + "arialbd.ttf")
+    # pedal eye: threaded hole ring on the outer face
+    mk.cyl(part, f(L, 0, ARM_T / 2 + 0.0019), f(L, 0, ARM_T / 2 + 0.0024), 0.0072, M.get("steel"), r2=0.0068, n=24)
+    return f
+
+
+def _chainring(part, bolts, yr):
+    gloss = M.get("black_gloss")
+    teeth = S.CHAINRING_T
+    R = S.pitch_r(teeth)
+    bolt_angles = [math.atan2(bz, bx) for bx, bz in bolts]
+    inner = []
+    for k in range(144):
+        phi = 2 * math.pi * k / 144
+        bump = 0.0
+        for ba in bolt_angles:
+            dphi = math.atan2(math.sin(phi - ba), math.cos(phi - ba))
+            if abs(dphi) < 0.27:
+                bump = max(bump, math.cos(math.pi / 2 * dphi / 0.27) ** 2)
+        r = 0.0532 - 0.0112 * bump
+        inner.append((r * math.cos(phi), r * math.sin(phi)))
+    holes = [inner] + [mk.circle_pts(bx, bz, 0.0046, 18) for bx, bz in bolts]
+    # slots in the band between the bolt tabs
+    order = sorted(bolt_angles)
+    for i, a0 in enumerate(order):
+        a1 = order[(i + 1) % len(order)] + (2 * math.pi if i == len(order) - 1 else 0.0)
+        start, end = a0 + math.radians(15), a1 - math.radians(15)
+        n = max(1, int(round(math.degrees(end - start) / 18)))
+        step = (end - start) / n
+        for j in range(n):
+            s0, s1 = start + step * j + math.radians(2.2), start + step * (j + 1) - math.radians(2.2)
+            outer = [(0.0583 * math.cos(s0 + (s1 - s0) * t / 6), 0.0583 * math.sin(s0 + (s1 - s0) * t / 6)) for t in range(7)]
+            inn = [(0.0557 * math.cos(s1 - (s1 - s0) * t / 6), 0.0557 * math.sin(s1 - (s1 - s0) * t / 6)) for t in range(7)]
+            holes.append(mk.rounded_poly(outer + inn, 0.0010, n=2))
+    ring = mk.plate2d(mk.sprocket_outline(teeth, pts_per_tooth=12), holes=holes, thickness=0.0022,
+                      bevel=0.0003, bevel_res=0)
+    mk.in_bike_plane(ring, S.BB, y=yr)
+    part.add_bm(ring, gloss)
+    # narrow-wide: every other tooth is thicker (pads on both faces of the wide teeth)
+    step = 2 * math.pi / teeth
+    for k in range(0, teeth, 2):
+        a = step * (k + 0.5)
+        ta = Vector((math.cos(a), 0.0, math.sin(a)))
+        tt = Vector((-math.sin(a), 0.0, math.cos(a)))
+        o = Vector((S.BB.x, 0.0, S.BB.z)) + ta * (R - 0.0020)
+        outline = [(-0.0018, -0.0022), (0.0022, -0.0012), (0.0022, 0.0012), (-0.0018, 0.0022)]
+        for s in (-1.0, 1.0):
+            y0 = yr + s * 0.0011
+            mk.prism(part, outline, o, ta, tt, Y, min(y0, y0 + s * 0.0005), max(y0, y0 + s * 0.0005), gloss)
+    return ring
+
 
 def build_crankset(coll):
     part = Part("crankset", "Drivetrain")
     black, steel, gloss = M.get("black_anodised"), M.get("steel"), M.get("black_gloss")
-    mk.cyl(part, S.BB + Y * 0.068, S.BB - Y * 0.068, 0.0120, black, n=32)                 # 24 mm spindle
     d = _crank_dir(S.CRANK_ANGLE)
-    for side, direction in ((-1.0, d), (1.0, -d)):
-        a = S.BB + Y * (side * 0.0645)
-        b = S.BB + direction * S.CRANK_LEN + Y * (side * (S.Q_HALF - 0.0085))
-        mk.tube(part, a, b, ARM_KEYS, black, samples=12, n=28, power=2.8)
-        mk.cyl(part, b + Y * (side * -0.0080), b + Y * (side * 0.0085), 0.0132, black, n=32)  # pedal eye
-        _text_on_arm(part, a, b, side, "SHIMANO", 0.006, 0.050, M.get("tyre_text"))
-        if side > 0:
-            # left arm clamp: split boss, two pinch bolts, preload cap
-            mk.cyl(part, a + Y * -0.006, a + Y * 0.012, 0.0215, black, n=32)
-            back = -direction
-            for dz in (-0.006, 0.006):
-                p = a + back * 0.019 + Y * (0.003 + dz)
-                perp = Vector((-back.z, 0.0, back.x))
-                mk.cyl(part, p - perp * 0.010, p + perp * 0.010, 0.0030, steel, n=10)
-            mk.cyl(part, a + Y * 0.012, a + Y * 0.0145, 0.0115, gloss, n=24)
-        else:
-            mk.cyl(part, a + Y * 0.006, a + Y * -0.010, 0.0230, black, n=32)
+    mk.cyl(part, S.BB + Y * 0.066, S.BB - Y * 0.066, 0.0120, steel, n=32)                   # 24 mm spindle
+    f_drive = _arm(part, -1.0, d, black)
+    f_left = _arm(part, 1.0, -d, black)
+    # drive arm: hollow spindle end showing on the outer face
+    mk.cyl(part, f_drive(0, 0, ARM_T / 2 + 0.0019), f_drive(0, 0, ARM_T / 2 + 0.0023), 0.0120, steel, n=40)
+    mk.cyl(part, f_drive(0, 0, ARM_T / 2 + 0.0023), f_drive(0, 0, ARM_T / 2 + 0.0024), 0.0104, gloss, n=40)
+    # left arm: split clamp with two pinch bolts, preload cap
+    slot = mk.scratch()
+    mk.box(slot, f_left(-0.0165, 0.0, 0.0), (0.0090, 0.0010, ARM_T + 0.0046), None, rot=mk.basis(-d, Y))
+    part.add_bm(slot.bm, gloss, smooth=False)
+    upv = Vector((d.z, 0.0, -d.x))
+    for wz in (-0.0035, 0.0035):
+        c = f_left(-0.0160, 0.0, wz)
+        mk.cyl(part, c - upv * 0.0105, c + upv * 0.0105, 0.0029, steel, n=12)
+        mk.cyl(part, c + upv * 0.0105, c + upv * 0.0125, 0.0042, black, n=6)                # hex head
+    mk.cyl(part, f_left(0, 0, ARM_T / 2 + 0.0019), f_left(0, 0, ARM_T / 2 + 0.0045), 0.0118, gloss, n=32)
+    mk.cyl(part, f_left(0, 0, ARM_T / 2 + 0.0045), f_left(0, 0, ARM_T / 2 + 0.0047), 0.0060, black, n=6)
 
-    # 4-arm spider (96 mm BCD)
+    # 4-arm spider on the drive arm, outboard of the ring
     yr = S.CHAINLINE_Y
+    y_sp = yr - 0.0011 - 0.0034
     bolts = []
-    for k in range(4):
-        ang = math.radians(S.CRANK_ANGLE + 45 + 90 * k)
-        bolts.append((0.048 * math.cos(ang), 0.048 * math.sin(ang)))
+    for a_rel in SPIDER_BOLTS:
+        ang = math.radians(S.CRANK_ANGLE + a_rel)
+        bolts.append((BCD_R * math.cos(ang), BCD_R * math.sin(ang)))
     for bx, bz in bolts:
-        arm = mk.plate2d(mk.capsule_outline((0.0, 0.0), (bx, bz), 0.0080), thickness=0.0060, bevel=0.0010)
-        mk.in_bike_plane(arm, S.BB, y=yr + 0.0045)
+        arm = mk.plate2d(mk.hull2d(mk.circle_pts(0.0, 0.0, 0.0090, 20) + mk.circle_pts(bx, bz, 0.0066, 20)),
+                         thickness=0.0068, bevel=0.0012, bevel_res=1)
+        mk.in_bike_plane(arm, S.BB, y=y_sp)
         part.add_bm(arm, black)
-    hub = mk.plate2d(mk.circle_pts(0, 0, 0.0260, 40), thickness=0.010, bevel=0.0015)
-    mk.in_bike_plane(hub, S.BB, y=yr + 0.007)
+    hub = mk.plate2d(mk.circle_pts(0, 0, 0.0245, 48), thickness=0.0100, bevel=0.0015, bevel_res=1)
+    mk.in_bike_plane(hub, S.BB, y=y_sp - 0.0020)
     part.add_bm(hub, black)
 
-    # 32T narrow-wide chainring with bolt tabs
-    inner = []
-    for k in range(120):
-        phi = 2 * math.pi * k / 120
-        bump = 0.0
-        for bx, bz in bolts:
-            dphi = math.atan2(math.sin(phi - math.atan2(bz, bx)), math.cos(phi - math.atan2(bz, bx)))
-            if abs(dphi) < 0.26:
-                bump = max(bump, math.cos(math.pi / 2 * dphi / 0.26) ** 2)
-        r = 0.0530 - 0.0110 * bump
-        inner.append((r * math.cos(phi), r * math.sin(phi)))
-    holes = [inner] + [mk.circle_pts(bx, bz, 0.0045, 16) for bx, bz in bolts]
-    ring = mk.plate2d(mk.sprocket_outline(S.CHAINRING_T), holes=holes, thickness=0.0022, bevel=0.0003)
-    mk.in_bike_plane(ring, S.BB, y=yr)
-    part.add_bm(ring, gloss)
+    _chainring(part, bolts, yr)
     for bx, bz in bolts:
-        p = S.BB + Vector((bx, yr, bz))
-        mk.cyl(part, p - Y * 0.0045, p - Y * 0.0012, 0.0050, steel, n=16)                 # bolt head
-        mk.cyl(part, p + Y * 0.0012, p + Y * 0.0080, 0.0042, steel, n=16)                 # nut
-    return part.finish(coll, pivot=S.BB, sharp_angle=50.0)
+        p = S.BB + Vector((bx, 0.0, bz))
+        head = p + Y * (y_sp - 0.0034)
+        mk.cyl(part, head, head - Y * 0.0026, 0.0052, steel, n=18)                        # bolt head
+        mk.cyl(part, head - Y * 0.0026, head - Y * 0.0027, 0.0022, gloss, n=6)            # hex socket
+        nut = p + Y * (yr + 0.0011)
+        mk.cyl(part, nut, nut + Y * 0.0040, 0.0043, steel, n=18)                          # nut
+    return part.finish(coll, pivot=S.BB, sharp_angle=40.0)
 
 
 def build_bottom_bracket(coll):
+    """BB-MT500-PA press-fit cups (black resin with a flange) and the grey seals around the spindle."""
     part = Part("bottom_bracket", "Drivetrain")
-    black = M.get("black_gloss")
+    black, grey = M.get("black_gloss"), M.get("grey_plastic")
+    cup_prof = [(0.0128, 0.0), (0.0226, 0.0), (0.0230, 0.0005), (0.0231, 0.0017), (0.0226, 0.0026),
+                (0.0212, 0.0034), (0.0170, 0.0040), (0.0146, 0.0041), (0.0134, 0.0046), (0.0128, 0.0046)]
+    seal_prof = [(0.0122, 0.0040), (0.0136, 0.0040), (0.0136, 0.0056), (0.0122, 0.0056)]
     for side in (1.0, -1.0):
-        cup = mk.scratch()
-        mk.revolve(cup, Vector((0, 0, 0)), [(0.0125, 0.0), (0.0225, 0.0), (0.0225, 0.0020), (0.0205, 0.0042),
-                                            (0.0125, 0.0042)], None, n=48)
-        bm = cup.bm
-        if side < 0:
-            bmesh_scale = -1.0
-            for v in bm.verts:
-                v.co.y = -v.co.y
-        mk.place(bm, S.BB + Y * (side * 0.0448), X, Y, Z)
-        part.add_bm(bm, black, free=False)
+        for prof, mat in ((cup_prof, black), (seal_prof, grey)):
+            sh = mk.scratch()
+            mk.revolve(sh, Vector((0, 0, 0)), prof, None, n=S.seg("bottom_bracket", 56))
+            if side < 0:
+                for v in sh.bm.verts:
+                    v.co.y = -v.co.y
+            mk.place(sh.bm, S.BB + Y * (side * 0.0448), X, Y, Z)
+            part.add_bm(sh.bm, mat, free=False)
     return part.finish(coll, pivot=S.BB)
 
 
 # --------------------------------------------------------------------------------- cassette
+# CS-M6100-12: steel cogs (14..33T with windows), the three biggest on a black aluminium spider.
+# Hyperglide+ shift ramps = a few lowered teeth per cog. Black spacers between the loose cogs.
+
+def _cog_outline(teeth, ppt=10):
+    pts = mk.sprocket_outline(teeth, pts_per_tooth=ppt, phase=0.13 * teeth)
+    R = S.pitch_r(teeth)
+    zones = max(2, teeth // 9)
+    for zi in range(zones):
+        k = int(round(zi * teeth / zones)) % teeth
+        for j in range(ppt):
+            x, y = pts[k * ppt + j]
+            r, a = math.hypot(x, y), math.atan2(y, x)
+            if r > R:
+                r = R + (r - R) * 0.45
+            pts[k * ppt + j] = (r * math.cos(a), r * math.sin(a))
+    return pts
+
 
 def build_cassette(coll):
     part = Part("cassette", "Drivetrain")
@@ -130,35 +237,52 @@ def build_cassette(coll):
     for teeth in S.CASSETTE:
         y = S.cog_y(teeth)
         R = S.pitch_r(teeth)
-        outline = mk.sprocket_outline(teeth, phase=0.13 * teeth)
-        if teeth >= 33:
-            holes = [mk.circle_pts(0, 0, R - 0.0120, 96)]
+        if teeth >= 39:
+            holes = [mk.circle_pts(0, 0, R - 0.0120, 120)]
+            n_win = teeth // 3
+            for k in range(n_win):
+                a = 2 * math.pi * (k + 0.5) / n_win + 0.05 * teeth
+                holes.append(mk.circle_pts((R - 0.0088) * math.cos(a), (R - 0.0088) * math.sin(a), 0.0024, 12))
         elif teeth >= 21:
-            holes = [mk.circle_pts(0, 0, 0.0175, 32)]
+            holes = [mk.circle_pts(0, 0, 0.0175, 40)]
             r0, r1 = 0.0175 + 0.0045, R - 0.0085
             for k in range(6):
                 a0 = 2 * math.pi * k / 6 + 0.25
                 win = [((r0 + (r1 - r0) * t) * math.cos(a0 + w), (r0 + (r1 - r0) * t) * math.sin(a0 + w))
                        for t, w in ((0, -0.20), (1, -0.32), (1, 0.32), (0, 0.20))]
-                holes.append(win)
+                holes.append(mk.rounded_poly(win, 0.0015, n=2))
+        elif teeth >= 14:
+            holes = [mk.circle_pts(0, 0, 0.0175, 40)]
+            rm = (0.0175 + R - 0.0045) / 2
+            for k in range(5):
+                a = 2 * math.pi * k / 5 + 0.3
+                holes.append(mk.circle_pts(rm * math.cos(a), rm * math.sin(a), 0.0016, 10))
         else:
-            holes = [mk.circle_pts(0, 0, 0.0175, 32)]
-        cog = mk.plate2d(outline, holes=holes, thickness=0.0018)
+            holes = [mk.circle_pts(0, 0, 0.0175 if teeth > 10 else 0.0160, 40)]
+        cog = mk.plate2d(_cog_outline(teeth), holes=holes, thickness=0.0018)   # no chamfer: it folds at the tooth tips
         mk.in_bike_plane(cog, c, y=y)
         part.add_bm(cog, silver, smooth=False)
-        if teeth >= 33:      # black aluminium spider carrying the big cogs
+        if teeth >= 39:      # black aluminium spider carrying the big cogs
             r_band = R - 0.0115
             for k in range(6):
                 ang = 2 * math.pi * k / 6 + 0.1 * teeth
                 tip = (r_band * math.cos(ang), r_band * math.sin(ang))
                 arm = mk.plate2d(mk.capsule_outline((0.0185 * math.cos(ang), 0.0185 * math.sin(ang)), tip, 0.0042),
-                                 thickness=0.0016)
+                                 thickness=0.0016, bevel=0.0003, bevel_res=0)
                 mk.in_bike_plane(arm, c, y=y + 0.0016)
                 part.add_bm(arm, black)
-            hubring = mk.plate2d(mk.circle_pts(0, 0, 0.0240, 40), holes=[mk.circle_pts(0, 0, 0.0175, 40)],
+            hubring = mk.plate2d(mk.circle_pts(0, 0, 0.0240, 48), holes=[mk.circle_pts(0, 0, 0.0175, 48)],
                                  thickness=0.0016)
             mk.in_bike_plane(hubring, c, y=y + 0.0016)
             part.add_bm(hubring, black)
+    # black spacers between the loose cogs (12T .. 33T)
+    loose = [t for t in S.CASSETTE if 12 <= t <= 33]
+    for a, b in zip(loose, loose[1:]):
+        ya, yb = S.cog_y(a), S.cog_y(b)
+        sp = mk.plate2d(mk.circle_pts(0, 0, 0.0198, 40), holes=[mk.circle_pts(0, 0, 0.0176, 40)],
+                        thickness=abs(ya - yb) - 0.0018)
+        mk.in_bike_plane(sp, c, y=(ya + yb) / 2)
+        part.add_bm(sp, black)
     # knurled lockring
     y_small = S.cog_y(10)
     lock = [(((0.0185 if k % 2 else 0.0178) * math.cos(2 * math.pi * k / 48)),
@@ -248,13 +372,41 @@ def _chain_y(x):
     return y_cog + (S.CHAINLINE_Y - y_cog) * t
 
 
+# --------------------------------------------------------------------------------------- chain
+# KMC X12 (silver, nickel plated): figure-8 plates with chamfered outer edges, rollers, peened pins,
+# one MissingLink-12 on the lower run.
+
+def _link_outline(length, r_end, waist, n_end=8):
+    out = [(-length / 2 + r_end * math.cos(t), r_end * math.sin(t))
+           for t in (math.pi / 2 + math.pi * i / n_end for i in range(n_end + 1))]
+    out.append((0.0, -waist))
+    out += [(length / 2 + r_end * math.cos(t), r_end * math.sin(t))
+            for t in (-math.pi / 2 + math.pi * i / n_end for i in range(n_end + 1))]
+    out.append((0.0, waist))
+    return out
+
+
+def _chain_plate(part, outline, inset, mid, u, v, y_in, y_out, mat):
+    """Plate between lateral y_in (inner face) and y_out (outer face); the outer edge is chamfered."""
+    ch = (y_out - y_in) * 0.45
+
+    def ring(pts, y):
+        return [Vector((mid.x, 0.0, mid.z)) + u * a + v * b + Y * y for a, b in pts]
+    mk.add_rings(part, [ring(outline, y_in), ring(outline, y_out - ch), ring(inset, y_out)], mat, smooth=False)
+
+
 def build_chain(coll):
     part = Part("chain", "Drivetrain")
-    steel, dark = M.get("steel"), M.get("grey_plastic")
+    steel, silver, dark = M.get("steel"), M.get("alu_silver"), M.get("grey_plastic")
     path = chain_path()
     total = sum(math.dist(path[i], path[(i + 1) % len(path)]) for i in range(len(path)))
     n_links = int(round(total / S.CHAIN_PITCH / 2)) * 2
     pins, _ = _resample_closed(path, n_links)
+    # MissingLink: an outer link on the lower run, halfway between the derailleur and the chainring
+    low_run = [k for k in range(1, n_links, 2) if pins[k][1] < S.BB.z - 0.02]
+    x_mid = (S.RD_LOWER_PULLEY[0] + S.REAR_AXLE.x + S.BB.x) / 2
+    quick = min(low_run, key=lambda k: abs(pins[k][0] - x_mid)) if low_run else -1
+    n_end = max(4, S.seg("chain", 8))
     for k in range(n_links):
         a, b = pins[k], pins[(k + 1) % n_links]
         pa = Vector((a[0], _chain_y(a[0]), a[1]))
@@ -263,96 +415,164 @@ def build_chain(coll):
         length = d.length
         u = Vector((d.x, 0.0, d.z)).normalized()
         v = Vector((-u.z, 0.0, u.x))
-        inner = k % 2 == 0
-        half_gap = 0.0021 if inner else 0.0030
-        r_end, waist = (0.0042, 0.0031) if inner else (0.0039, 0.0029)
-        # figure-8 link plate: round ends with a waist, like a real chain plate
-        outline = [(-length / 2 + r_end * math.cos(t), r_end * math.sin(t))
-                   for t in (math.pi / 2 + math.pi * i / 6 for i in range(7))]
-        outline.append((0.0, -waist))
-        outline += [(length / 2 + r_end * math.cos(t), r_end * math.sin(t))
-                    for t in (-math.pi / 2 + math.pi * i / 6 for i in range(7))]
-        outline.append((0.0, waist))
-        for side in (-1.0, 1.0):
-            y0 = mid.y + side * half_gap
-            mk.prism(part, outline, Vector((mid.x, 0.0, mid.z)), u, v, Y, y0 - 0.0004, y0 + 0.0004,
-                     steel if inner else M.get("alu_silver"))
-        mk.cyl(part, pa - Y * 0.0026, pa + Y * 0.0026, 0.0030, dark, n=8)
-        mk.cyl(part, pa - Y * 0.0039, pa + Y * 0.0039, 0.0013, steel, n=6)                # pin heads
+        if k % 2 == 0:
+            r_end, waist, y0, y1, mat = 0.00375, 0.00295, 0.00110, 0.00190, steel     # inner link
+        elif k == quick:
+            r_end, waist, y0, y1, mat = 0.00365, 0.00330, 0.00195, 0.00265, silver    # MissingLink-12
+        else:
+            r_end, waist, y0, y1, mat = 0.00360, 0.00275, 0.00195, 0.00265, silver    # outer link
+        outline = _link_outline(length, r_end, waist, n_end)
+        sx = 1.0 - 0.00028 / (length / 2 + r_end)
+        sy = 1.0 - 0.00028 / r_end
+        inset = [(p[0] * sx, p[1] * sy) for p in outline]
+        for s in (-1.0, 1.0):
+            _chain_plate(part, outline, inset, mid, u, v, mid.y + s * y0, mid.y + s * y1, mat)
+        # roller on the bushing between the inner plates, pin through everything with peened heads
+        mk.cyl(part, pa - Y * 0.00108, pa + Y * 0.00108, 0.00385, dark, n=12)
+        mk.cyl(part, pa - Y * 0.00265, pa + Y * 0.00265, 0.00180, steel, n=10, caps=False)
+        r_head = 0.0021 if k in (quick, (quick + 1) % n_links) else 0.0019
+        for s in (-1.0, 1.0):
+            mk.cyl(part, pa + Y * (s * 0.00265), pa + Y * (s * 0.00290), r_head, steel, r2=r_head * 0.7, n=10)
     return part.finish(coll)
 
 
 # ------------------------------------------------------------------------------- derailleur
+# RD-M6100-SGS, traced on SCOTT's studio photo (chain on the 10T cog). Points in mm from the rear axle
+# (x forward, z up): B-axle (silver cap) at RD_MOUNT_BOLT, clutch housing around RD_CLUTCH, pulleys at
+# RD_UPPER/LOWER_PULLEY. Shapes from Shimano's product photos.
+
+RD_BRACKET_END = (-57.0, -21.0)          # end of the bracket arm, where the shift housing goes in
+RD_BODY = [(-48, -46), (-34, -41), (-14, -43), (-4, -52), (22, -62), (32, -72), (30, -90), (14, -96), (-12, -88),
+           (-30, -78), (-46, -62)]
+RD_HOUSING = [(11, -89), (40, -90), (49, -108), (47, -128), (36, -137), (14, -131), (9, -110)]
+RD_GUARD = [(-40, -168), (-62, -170), (-84, -175), (-85, -186), (-81, -204), (-71, -216), (-54, -222),
+            (-36, -219), (-22, -209), (-15, -195), (-18, -178)]
+RD_CAGE_TOP = (24.0, -128.0)             # top of the outer cage arm, under the clutch housing
+Y_BODY_FACE = -0.0991                    # outer face of the body (centre -0.0905, half thickness 6 mm, bevel)
+Y_HOUSING_FACE = -0.0988                 # outer face of the clutch housing
+
+
+def _rd_text(part, text, centre_mm, angle_deg, height_mm, length_mm, y, mat, font):
+    probe = mk._text_mesh(text, 1.0, 0.0, FONTS + font)
+    xs = [v.co.x for v in probe.vertices]
+    ys = [v.co.y for v in probe.vertices]
+    bpy.data.meshes.remove(probe)
+    sx, sy = length_mm * MM / (max(xs) - min(xs)), height_mm * MM / (max(ys) - min(ys))
+    a = math.radians(angle_deg)
+    du, dv = Vector((math.cos(a), 0.0, math.sin(a))), Vector((-math.sin(a), 0.0, math.cos(a)))
+    c = _ax(centre_mm[0], centre_mm[1], y)
+    mk.add_text(part, text, 1.0, 0.0, mat, lambda v: c + du * (v.x * sx) + dv * (v.y * sy), FONTS + font)
+
+
+def _outer_cage_outline():
+    cx, cz = RD_CAGE_TOP
+    d = Vector((-56.0, -48.0)).normalized()
+    n = Vector((-d.y, d.x))                     # across the arm (points down-right)
+    hw = 8.5
+    L0 = Vector((cx, cz)) - n * hw
+    R0 = Vector((cx, cz)) + n * hw
+    a_r, a_l = math.atan2(n.y, n.x), math.atan2(-n.y, -n.x)
+    if a_l < a_r:
+        a_l += 2 * math.pi
+    top_arc = [(cx + hw * math.cos(a_r + (a_l - a_r) * k / 8), cz + hw * math.sin(a_r + (a_l - a_r) * k / 8))
+               for k in range(9)]
+    pts = [tuple(L0), tuple(L0 + d * 75.0)] + RD_GUARD[1:-1] + [tuple(R0 + d * 63.0), tuple(R0)] + top_arc[1:-1]
+    return mk.rounded_poly(pts, 3.0, n=3), d
+
 
 def build_derailleur(coll):
     part = Part("derailleur", "Drivetrain")
-    grey, black, steel, gloss = M.get("grey_plastic"), M.get("black_anodised"), M.get("steel"), M.get("black_gloss")
+    grey, black, steel = M.get("deore_grey"), M.get("black_anodised"), M.get("steel")
+    gloss, matte = M.get("black_gloss"), M.get("black_matte")
     up, low = _pulley_centers()
     y = S.cog_y(S.CHAIN_ON)
-    bolt = _rd(S.RD_MOUNT_BOLT)
-    clutch = _rd(S.RD_CLUTCH)
-    bx, bz, cx, cz = bolt.x, bolt.z, clutch.x, clutch.z
+    bx, bz = S.RD_MOUNT_BOLT[0] / MM, S.RD_MOUNT_BOLT[1] / MM
+    px, pz = S.RD_CLUTCH[0] / MM, S.RD_CLUTCH[1] / MM
 
-    # B-knuckle on the hanger bolt, with the mounting bolt and B-tension screw
-    mk.cyl(part, bolt + Y * -0.077, bolt + Y * -0.093, 0.0115, black, n=32)
-    mk.cyl(part, bolt + Y * -0.093, bolt + Y * -0.0955, 0.0055, steel, n=12)
-    mk.cyl(part, bolt + Vector((0.004, -0.088, 0.012)), bolt + Vector((0.004, -0.088, 0.019)), 0.0022, steel, n=8)
+    # B-knuckle on the hanger: dark grey drum, silver B-axle cap with hex socket standing out of the body
+    mk.cyl(part, _ax(bx, bz, -0.0770), _ax(bx, bz, -0.0935), 0.0110, grey, n=40)
+    mk.cyl(part, _ax(bx, bz, -0.0960), _ax(bx, bz, Y_BODY_FACE - 0.0012), 0.0085, steel, r2=0.0080, n=40)
+    hexs = mk.scratch()
+    mk.cyl(hexs, _ax(bx, bz, Y_BODY_FACE - 0.0006), _ax(bx, bz, Y_BODY_FACE - 0.0013), 0.0030, None, n=6)
+    part.add_bm(hexs.bm, matte, smooth=False)
+    # bracket arm out to the cable stop
+    ex, ez = RD_BRACKET_END
+    _axle_plate(part, mk.hull2d(mk.circle_pts(bx, bz, 8.0, 24) + mk.circle_pts(ex, ez, 6.0, 20)), -0.0870, 0.0075,
+                grey, holes_mm=[mk.circle_pts(ex, ez, 2.6, 14)], bevel=0.0012, bevel_res=1)
+    mk.cyl(part, _ax(ex, ez, -0.0830), _ax(ex, ez, -0.0912), 0.0030, steel, n=14)            # housing ferrule
+    # B-tension screw
+    mk.cyl(part, _ax(bx + 12, bz + 8, -0.0840), _ax(bx + 12, bz + 2, -0.0840), 0.0018, steel, n=8)
 
-    # parallelogram: chunky outer body with DEORE, inner link plate
-    body = mk.hull2d(mk.circle_pts(bx, bz, 0.0130, 20) + mk.circle_pts(cx, cz, 0.0185, 20)
-                     + [(bx + 0.024, bz - 0.018), (cx - 0.030, cz + 0.012)])
-    outer = mk.plate2d(body, holes=[], thickness=0.0120, bevel=0.0025)
-    mk.place(outer, Vector((0, -0.0905, 0)), X, Z, -Y)
-    part.add_bm(outer, grey)
-    inner_link = mk.plate2d(mk.hull2d(mk.circle_pts(bx, bz, 0.010, 16) + mk.circle_pts(cx, cz, 0.012, 16)),
-                            holes=[mk.rounded_rect((bx + cx) / 2, (bz + cz) / 2, 0.016, 0.010, 0.004)],
-                            thickness=0.0040, bevel=0.0008)
-    mk.place(inner_link, Vector((0, -0.0765, 0)), X, Z, -Y)
-    part.add_bm(inner_link, black)
-    mid = Vector(((bx + cx) / 2, -0.0993, (bz + cz) / 2))
-    dvec = Vector((cx - bx, 0.0, cz - bz)).normalized()
-    up_v = Vector((-dvec.z, 0.0, dvec.x))
-    if up_v.z < 0:
-        up_v = -up_v
-    probe = mk._text_mesh("DEORE", 1.0, 0.0)
-    xs = [v.co.x for v in probe.vertices]
-    bpy.data.meshes.remove(probe)
-    sx = 0.030 / (max(xs) - min(xs))
-    mk.add_text(part, "DEORE", 1.0, 0.0, M.get("tyre_text"),
-                lambda v: mid + dvec * (v.x * sx) + up_v * (v.y * sx) - Y * 0.0003)
+    # main body (base member + parallelogram cover), DEORE on its outer face
+    _axle_plate(part, mk.rounded_poly(RD_BODY, 4.5, n=4), -0.0905, 0.0120, grey, bevel=0.0024, bevel_res=2)
+    # raised, slanted parallelogram cover carrying the DEORE logo (traced: -17..24 mm, sloping down to the front)
+    _axle_plate(part, mk.rounded_poly([(-18, -58), (22, -66), (25, -84), (-15, -76)], 2.5, n=3),
+                Y_BODY_FACE - 0.0006, 0.0020, grey, bevel=0.0007, bevel_res=1)
+    _rd_text(part, "DEORE", (4.0, -71.5), -11.5, 5.4, 27.0, Y_BODY_FACE - 0.0024, M.get("deore_logo"), "FRAHVIT.TTF")
+    # inner link plate behind the body
+    _axle_plate(part, mk.rounded_poly([(-30, -50), (20, -70), (28, -92), (-20, -78)], 4.0, n=3), -0.0790, 0.0040,
+                black, bevel=0.0008)
+    # limit screws (H / L) and the cable anchor bolt with its washer
+    for sx_, sz_ in ((-49.0, -53.0), (-45.0, -65.0)):
+        mk.cyl(part, _ax(sx_ + 6, sz_ + 3, -0.0900), _ax(sx_, sz_, -0.0900), 0.0019, steel, n=10)
+        mk.cyl(part, _ax(sx_, sz_, -0.0900), _ax(sx_ - 1.2, sz_ - 0.6, -0.0900), 0.0024, steel, n=10)
+    mk.cyl(part, _ax(-38.0, -52.0, Y_BODY_FACE + 0.0004), _ax(-38.0, -52.0, Y_BODY_FACE - 0.0006), 0.0034, steel, n=16)
+    mk.cyl(part, _ax(-38.0, -52.0, Y_BODY_FACE - 0.0006), _ax(-38.0, -52.0, Y_BODY_FACE - 0.0022), 0.0024, steel, n=6)
 
-    # P-knuckle with the Shadow RD+ clutch housing and switch
-    mk.cyl(part, clutch + Y * (y - 0.008 - clutch.y), clutch + Y * (-0.0985 - clutch.y), 0.0172, black, n=40)
-    mk.cyl(part, clutch + Y * (-0.0985 - clutch.y), clutch + Y * (-0.1000 - clutch.y), 0.0130, grey, n=32)
-    sw = clutch + Vector((0.008, -0.096 - clutch.y, 0.014))
-    mk.box(part, sw, (0.014, 0.004, 0.007), grey, rot=mk.rot_y(math.radians(20)))
+    # P-knuckle: Shadow RD+ clutch housing with the SHIMANO cap and the ON/OFF lever
+    _axle_plate(part, mk.rounded_poly(RD_HOUSING, 7.0, n=4), -0.0885, 0.0150, black, bevel=0.0028, bevel_res=2)
+    cap_c = (31.0, -117.5)
+    mk.cyl(part, _ax(*cap_c, Y_HOUSING_FACE + 0.0010), _ax(*cap_c, Y_HOUSING_FACE - 0.0005), 0.0115, gloss,
+           r2=0.0110, n=40)
+    _rd_text(part, "SHIMANO", cap_c, 8.0, 2.4, 15.0, Y_HOUSING_FACE - 0.0007, M.get("tyre_text"), "arialbd.ttf")
+    mk.cyl(part, _ax(px - 4, pz + 8, Y_HOUSING_FACE + 0.0010), _ax(px - 4, pz + 8, Y_HOUSING_FACE - 0.0004), 0.0072,
+           gloss, n=32)
+    lever = mk.scratch()
+    mk.box(lever, _ax(31.0, -88.0, -0.0905), (0.016, 0.006, 0.0045), None, rot=mk.rot_y(math.radians(-6)))
+    part.add_bm(mk.subdivided(lever, 1), black)
+    for sx_, sz_ in ((13.0, -127.0), (45.0, -124.0), (44.0, -96.0)):
+        mk.cyl(part, _ax(sx_, sz_, Y_HOUSING_FACE + 0.0008), _ax(sx_, sz_, Y_HOUSING_FACE - 0.0006), 0.0023, matte, n=6)
 
-    # cage: outer plate with windows, inner plate
-    cage = mk.hull2d(mk.circle_pts(cx, cz, 0.0165, 20) + mk.circle_pts(up.x, up.z, 0.0190, 24)
-                     + mk.circle_pts(low.x, low.z, 0.0200, 24))
-    w1 = mk.rounded_rect((up.x + low.x) / 2, (up.z + low.z) / 2, 0.012, 0.022, 0.004)
-    win1 = [((px - (up.x + low.x) / 2) * math.cos(0.42) - (pz - (up.z + low.z) / 2) * math.sin(0.42) + (up.x + low.x) / 2,
-             (px - (up.x + low.x) / 2) * math.sin(0.42) + (pz - (up.z + low.z) / 2) * math.cos(0.42) + (up.z + low.z) / 2)
-            for px, pz in w1]
-    outer_cage = mk.plate2d(cage, holes=[win1], thickness=0.0018, bevel=0.0004)
-    mk.place(outer_cage, Vector((0, y - 0.0070, 0)), X, Z, -Y)
-    part.add_bm(outer_cage, black)
-    inner_cage = mk.plate2d(mk.hull2d(mk.circle_pts(up.x, up.z, 0.0170, 20) + mk.circle_pts(low.x, low.z, 0.0185, 20)),
-                            holes=[win1], thickness=0.0014)
-    mk.place(inner_cage, Vector((0, y + 0.0055, 0)), X, Z, -Y)
-    part.add_bm(inner_cage, black)
+    # outer cage plate: arm with slot windows, guard around the lower pulley with round cut-outs
+    outline, d = _outer_cage_outline()
+    holes = []
+    cx, cz = RD_CAGE_TOP
+    for t in (22.0, 37.0, 52.0):
+        c = Vector((cx, cz)) + d * t
+        holes.append(mk.capsule_outline(tuple(c - d * 3.8), tuple(c + d * 3.8), 1.9, n=6))
+    lx, lz = S.RD_LOWER_PULLEY[0] / MM, S.RD_LOWER_PULLEY[1] / MM
+    for a0, a1 in ((150, 210), (230, 300), (320, 390)):
+        arc_o = [(lx + 20.0 * math.cos(math.radians(a0 + (a1 - a0) * k / 8)),
+                  lz + 20.0 * math.sin(math.radians(a0 + (a1 - a0) * k / 8))) for k in range(9)]
+        arc_i = [(lx + 9.5 * math.cos(math.radians(a1 - (a1 - a0) * k / 4)),
+                  lz + 9.5 * math.sin(math.radians(a1 - (a1 - a0) * k / 4))) for k in range(5)]
+        holes.append(mk.rounded_poly(arc_o + arc_i, 2.0, n=2))
+    _axle_plate(part, outline, y - 0.0063, 0.0022, black, holes_mm=holes, bevel=0.0005, bevel_res=1)
+    # inner cage plate (around both pulleys) with two windows
+    ux, uz = S.RD_UPPER_PULLEY[0] / MM, S.RD_UPPER_PULLEY[1] / MM
+    inner_out = mk.hull2d(mk.circle_pts(ux, uz, 17.0, 24) + mk.circle_pts(lx, lz, 19.0, 24))
+    dm = Vector((lx - ux, lz - uz))
+    nm = Vector((-dm.y, dm.x)).normalized()
+    win = []
+    for t in (0.38, 0.62):
+        c = Vector((ux, uz)) + dm * t
+        win.append(mk.rounded_poly([tuple(c + nm * 7 - dm.normalized() * 6), tuple(c + nm * 7 + dm.normalized() * 6),
+                                    tuple(c - nm * 7)], 2.0, n=3))
+    _axle_plate(part, inner_out, y + 0.0042, 0.0016, black, holes_mm=win, bevel=0.0003, bevel_res=0)
 
-    # 13T pulleys with six holes, centre bolts
+    # 13T pulleys: narrow teeth, six windows, black hub, steel bolts through the cage
     for centre in (up, low):
-        holes = [mk.circle_pts(0.0145 * math.cos(2 * math.pi * k / 6), 0.0145 * math.sin(2 * math.pi * k / 6), 0.0032, 12)
+        holes = [mk.circle_pts(0.0145 * math.cos(2 * math.pi * k / 6), 0.0145 * math.sin(2 * math.pi * k / 6), 0.0034, 14)
                  for k in range(6)]
-        pulley = mk.plate2d(mk.sprocket_outline(S.PULLEY_T, roller_r=0.0038, tip_h=0.0030), holes=holes,
-                            thickness=0.0046, bevel=0.0004)
+        pulley = mk.plate2d(mk.sprocket_outline(S.PULLEY_T, roller_r=0.0038, tip_h=0.0034, pts_per_tooth=12),
+                            holes=holes, thickness=0.0042, bevel=0.0004, bevel_res=1)
         mk.in_bike_plane(pulley, Vector((centre.x, 0.0, centre.z)), y=y)
         part.add_bm(pulley, gloss)
-        mk.cyl(part, Vector((centre.x, y + 0.0062, centre.z)), Vector((centre.x, y - 0.0085, centre.z)), 0.0055,
-               steel, n=16)
-    return part.finish(coll, sharp_angle=50.0)
+        mk.cyl(part, Vector((centre.x, y + 0.0030, centre.z)), Vector((centre.x, y - 0.0030, centre.z)), 0.0085, black, n=24)
+        mk.cyl(part, Vector((centre.x, y + 0.0052, centre.z)), Vector((centre.x, y - 0.0078, centre.z)), 0.0030, steel, n=12)
+        mk.cyl(part, Vector((centre.x, y - 0.0074, centre.z)), Vector((centre.x, y - 0.0086, centre.z)), 0.0050, steel,
+               r2=0.0046, n=20)
+    return part.finish(coll, sharp_angle=40.0)
 
 
 # ----------------------------------------------------------------------------------- pedals
