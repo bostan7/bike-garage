@@ -1,4 +1,5 @@
-"""Syncros 31.6 x 400 mm seatpost (+ seat clamp) and Syncros Belcarra Regular 2.5 saddle."""
+"""Syncros 31.6 x 400 mm seatpost (+ quick-release seat clamp) and Toni's saddle: a bigger, softer comfort
+saddle (replaced the stock Syncros Belcarra; exact model to come from Toni's photos)."""
 import math
 
 import bpy
@@ -15,7 +16,7 @@ def saddle_top():
 
 
 def post_head():
-    return S.on_seat_axis(S.SADDLE_HEIGHT - 50.0)
+    return S.on_seat_axis(S.SADDLE_HEIGHT - 70.0)          # thick comfort saddle: rails ~45 mm below its top
 
 
 def build_seatpost(coll):
@@ -70,12 +71,13 @@ def build_seatpost(coll):
     return part.finish(coll, sharp_angle=50.0)
 
 
-# saddle stations: x (forward, m), half width, half thickness, vertical offset of the top line
-SADDLE = [(-0.122, 0.030, 0.006, 0.004), (-0.118, 0.050, 0.011, 0.003), (-0.110, 0.062, 0.014, 0.002),
-          (-0.096, 0.068, 0.016, 0.001), (-0.075, 0.068, 0.017, 0.0), (-0.050, 0.062, 0.017, -0.001),
-          (-0.025, 0.052, 0.017, -0.002), (0.000, 0.040, 0.016, -0.003), (0.025, 0.030, 0.015, -0.003),
-          (0.050, 0.024, 0.014, -0.0025), (0.080, 0.021, 0.013, -0.0015), (0.105, 0.019, 0.012, -0.001),
-          (0.125, 0.016, 0.011, -0.0015), (0.138, 0.012, 0.009, -0.003), (0.145, 0.006, 0.006, -0.005)]
+# saddle stations: x (forward, m), half width, half thickness, vertical offset of the top line.
+# Comfort saddle (WTB Comfort Wide / Selle Royal Explora-like): ~255 mm long, ~172 mm wide, thick padding
+SADDLE = [(-0.120, 0.040, 0.010, 0.004), (-0.116, 0.066, 0.016, 0.003), (-0.106, 0.080, 0.020, 0.002),
+          (-0.090, 0.086, 0.021, 0.001), (-0.068, 0.085, 0.021, 0.0), (-0.045, 0.078, 0.021, -0.001),
+          (-0.020, 0.064, 0.020, -0.002), (0.005, 0.048, 0.019, -0.003), (0.030, 0.036, 0.018, -0.003),
+          (0.058, 0.030, 0.017, -0.0025), (0.085, 0.027, 0.016, -0.0015), (0.108, 0.025, 0.015, -0.001),
+          (0.124, 0.021, 0.013, -0.002), (0.132, 0.014, 0.010, -0.004), (0.136, 0.007, 0.006, -0.006)]
 
 
 def build_saddle(coll):
@@ -90,8 +92,15 @@ def build_saddle(coll):
     mk.tube_path(shell, mk.catmull_rom(pts, 3), [mk.interp_keys([(i / (len(prof) - 1), p) for i, p in enumerate(prof)],
                                                                  t / (3 * (len(prof) - 1)))
                                                   for t in range(3 * (len(prof) - 1) + 1)],
-                 None, n=40, power=3.0)
-    part.add_bm(mk.subdivided(shell, 1), cover)
+                 None, n=48, power=2.6)
+    padded = mk.subdivided(shell, 1)
+    # central relief groove along the top (comfort saddles have one)
+    for v in padded.verts:
+        dx, dy = v.co.x - top.x, v.co.y - top.y
+        if -0.090 < dx < 0.100 and abs(dy) < 0.011 and v.co.z > top.z - 0.012:
+            window = math.sin(math.pi * (dx + 0.090) / 0.190) ** 0.6
+            v.co.z -= 0.0035 * window * math.cos(math.pi / 2 * abs(dy) / 0.011) ** 2
+    part.add_bm(padded, cover)
     # plastic base, slightly smaller and lower
     base_pts = [p + Z * -0.006 for p in pts[1:-1]]
     base_prof = [(w * 0.88, h * 0.55) for (w, h) in prof[1:-1]]
@@ -101,16 +110,8 @@ def build_saddle(coll):
     for side in (-1.0, 1.0):
         y = side * 0.021
         z_rail = head.z + 0.022
-        ctrl = [top + X * -0.098 + Y * (y * 1.5) + Z * -0.016, Vector((top.x - 0.078, top.y + y * 1.1, z_rail + 0.004)),
+        ctrl = [top + X * -0.098 + Y * (y * 1.9) + Z * -0.030, Vector((top.x - 0.078, top.y + y * 1.3, z_rail + 0.004)),
                 Vector((top.x - 0.040, top.y + y, z_rail)), Vector((top.x + 0.040, top.y + y, z_rail)),
-                Vector((top.x + 0.080, top.y + y * 0.7, z_rail + 0.006)), top + X * 0.102 + Y * (y * 0.45) + Z * -0.014]
+                Vector((top.x + 0.080, top.y + y * 0.7, z_rail + 0.006)), top + X * 0.104 + Y * (y * 0.45) + Z * -0.026]
         mk.curve_tube(part, ctrl, 0.0035, rails_mat, samples=8, n=12)
-    # SYNCROS on the back of the saddle
-    probe = mk._text_mesh("SYNCROS", 1.0, 0.0)
-    xs = [v.co.x for v in probe.vertices]
-    bpy.data.meshes.remove(probe)
-    sx = 0.040 / (max(xs) - min(xs))
-    back = top + X * -0.1235 + Z * (0.004 - 0.008)
-    mk.add_text(part, "SYNCROS", 1.0, 0.0, M.get("tyre_text"),
-                lambda v: back + Y * (-v.x * sx) + Z * (v.y * sx) + X * -0.0006)
     return part.finish(coll, sharp_angle=60.0)

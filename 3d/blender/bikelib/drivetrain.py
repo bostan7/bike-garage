@@ -578,25 +578,33 @@ def build_derailleur(coll):
 # ----------------------------------------------------------------------------------- pedals
 
 def build_pedals(coll):
+    """Toni's pedals: silver two-sided aluminium trekking pedals (Wellgo B087-like; exact model to come):
+    box frame with an open centre, axle body across the middle, small pins on both faces, amber reflectors
+    in the front and back walls, black dust cap."""
     part = Part("pedals", "Drivetrain")
-    black, steel, refl = M.get("black_matte"), M.get("steel"), M.get("reflector")
-    outline = mk.rounded_rect(0.0, 0.0, 0.096, 0.094, 0.010)
-    windows = [mk.rounded_rect(0.0, dy, 0.060, 0.026, 0.006) for dy in (-0.026, 0.026)]
+    silver, black, steel, refl = M.get("alu_silver"), M.get("black_anodised"), M.get("steel"), M.get("reflector")
+    L, W, T = 0.090, 0.098, 0.020                                   # fore-aft, across, thickness
+    wall = 0.0075
     for p, side in zip(pedal_points(), (-1.0, 1.0)):
-        mk.cyl(part, p, p + Y * (side * 0.016), 0.0065, steel, n=16)                        # axle
+        mk.cyl(part, p, p + Y * (side * 0.020), 0.0065, black, n=20)                        # spindle
         centre = p + Y * (side * 0.063)
-        body = mk.plate2d(outline, holes=windows, thickness=0.0170, bevel=0.0020)
-        mk.place(body, centre, X, Y * side, Z * side)
-        part.add_bm(body, black)
-        mk.cyl(part, centre - Y * 0.048, centre + Y * 0.048, 0.0105, black, n=24)          # axle housing
-        mk.cyl(part, centre + Y * (side * 0.048), centre + Y * (side * 0.052), 0.0080, black, n=16)  # end cap
-        for sx_ in (-0.042, 0.042):                                                           # pins
-            for sy_ in (-0.034, -0.012, 0.012, 0.034):
+        # open box frame: four walls, so you can see through between the axle body and the ribs
+        for sx_ in (-1.0, 1.0):                                                               # front / back walls
+            mk.box(part, centre + X * (sx_ * (L / 2 - wall / 2)), (wall, W, T), silver)
+        for sy_ in (-1.0, 1.0):                                                               # side walls
+            mk.box(part, centre + Y * (sy_ * (W / 2 - 0.004)), (L - 2 * wall + 0.002, 0.008, T * 0.85), silver)
+        a, b = centre - Y * (side * (W / 2 - 0.004)), centre + Y * (side * (W / 2 - 0.004))
+        mk.cyl(part, a, b, 0.0085, silver, n=32)                                             # axle body
+        mk.cyl(part, b, b + Y * (side * 0.0045), 0.0080, black, r2=0.0074, n=24)            # dust cap
+        for sx_ in (-0.022, 0.022):                                                           # thin cross ribs
+            mk.box(part, centre + X * sx_, (0.0030, W - 0.010, T * 0.45), silver)
+        for sx_ in (-(L / 2 - wall / 2), L / 2 - wall / 2):                                  # pins, both faces
+            for sy_ in (-0.033, -0.011, 0.011, 0.033):
                 for sz in (-1.0, 1.0):
-                    q = centre + X * sx_ + Y * sy_ + Z * (sz * 0.0085)
-                    mk.cyl(part, q, q + Z * (sz * 0.0035), 0.0013, steel, n=6)
-        for sx_ in (-0.0485, 0.0485):                                                         # reflectors
-            r = mk.plate2d(mk.rounded_rect(0.0, 0.0, 0.040, 0.011, 0.002), thickness=0.0016)
-            mk.place(r, centre + X * sx_, Y, Z, X * (1.0 if sx_ > 0 else -1.0))
+                    q = centre + X * sx_ + Y * sy_ + Z * (sz * T / 2)
+                    mk.cyl(part, q, q + Z * (sz * 0.0028), 0.0013, steel, n=8)
+        for sx_ in (-1.0, 1.0):                                                               # amber reflectors
+            r = mk.plate2d(mk.rounded_rect(0.0, 0.0, 0.050, 0.010, 0.002), thickness=0.0016)
+            mk.place(r, centre + X * (sx_ * (L / 2 + 0.0006)), Y, Z, X * sx_)
             part.add_bm(r, refl)
     return part.finish(coll, pivot=S.BB, sharp_angle=50.0)

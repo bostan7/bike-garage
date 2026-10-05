@@ -43,6 +43,9 @@ Saved to `photos/online-reference/suntour-xcr32/` (local only): aftermarket XCR 
 ## Brakes and cockpit references (pass 4)
 Saved to `photos/online-reference/cockpit-brakes/` (local only): BL-MT200 / BR-MT200 (lever + caliper), SM-RT10 180/160, SL-M6100-R, WTB Wafel and Comfort Zone lock-on grips, Suntour lockout lever (velomine, playtristore, northwestbicycle, thelostco). SCOTT 360° frames 013 (non-drive side: both calipers) and 017 (cockpit from the front).
 
+## Saddle and pedal references (pass 5)
+Saved to `photos/online-reference/pedals-saddle/` (local only): Wellgo B087 silver and MKS Aurora pedals, WTB Comfort Wide, Selle Royal Explora Relaxed and Journey saddles (northwestbicycle Shopify JSON). Generic stand-ins until Toni sends photos of his own saddle and pedals.
+
 ## Real-world photos (other owners)
 - buycycle: used **2022 Scale 980, size L, XCR32**, 25 photos (listing marked deleted/sold, photos still visible; tyres changed to tan wall): https://buycycle.com/en-de/product/scale-980-2022-57579
 - buycycle: used 2021 Scale 980: https://buycycle.com/en-ee/product/scale-980-2021-50570

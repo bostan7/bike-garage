@@ -92,7 +92,7 @@ Origin = BB centre, +x forward, +y up. Computed from the official table above; u
 | Crank length (stamped inside the crank arm) | 175 mm likely for L (165/170/175 exist) | ___ |
 | Fork model (decal) | XCR32 (or X1 32) | ___ |
 | Fork steerer | straight 1 1/8" | ___ |
-| Saddle height (BB centre → top of saddle) | — | ___ |
+| Saddle height (BB centre → top of saddle) | — | ~742 mm estimated (Toni is 181 cm); measure later |
 | Handlebar width (cut?) | 740 mm | ___ |
 | Grip model | Syncros, neon yellow | ___ |
 | Seat clamp | 34.9 mm, QR or bolt? | **QR lever** (Toni, 2026-10-05) |

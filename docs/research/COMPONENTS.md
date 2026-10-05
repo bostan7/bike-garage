@@ -89,6 +89,7 @@ What each part looks like and its key measurements (for the 3D model), plus usef
 
 ### `pedals` — Femin/Feimin FP873ZU
 - ✅ Flat platform pedals (SCOTT's photos and weight exclude pedals). Looks: 🔍 photos needed.
+- ✅ **Toni's bike (modification):** **silver two-sided trekking pedals** (model 🔍). Modelled like a Wellgo B087: aluminium box frame, open centre, pins, amber reflectors front and back.
 
 ---
 
@@ -125,6 +126,7 @@ What each part looks like and its key measurements (for the 3D model), plus usef
 ### `saddle` — Syncros Belcarra Regular 2.5
 - ✅ Model. 🟡 The closely related Belcarra Regular 2.0 is ~250 × 130 mm with 7 mm CrMo rails; the 2.5 is probably very similar 📐.
 - **Look:** black, slim XC shape.
+- ✅ **Toni's bike (modification):** replaced with a **bigger, softer comfort saddle** (model 🔍, Toni will send photos). Modelled like a WTB Comfort Wide / Selle Royal Explora: ~255 × 172 mm, thick padding, central relief groove.
 
 ---
 

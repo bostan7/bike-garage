@@ -134,5 +134,5 @@ BAR_SWEEP = 9.0
 GRIP_LEN = 0.130
 
 # --- Seat --------------------------------------------------------------------------------------
-SADDLE_HEIGHT = 750.0      # BB centre -> top of saddle along the seat axis (mm), rider ~185 cm
+SADDLE_HEIGHT = 742.0      # BB centre -> top of saddle along the seat axis (mm); Toni is 181 cm (~0.883 x inseam)
 SEATPOST_R = 0.0158        # 31.6 mm

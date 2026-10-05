@@ -21,6 +21,8 @@ CATEGORY = {"FRAME": "Frame & fork", "COCKPIT": "Cockpit", "BRAKES": "Brakes", "
 # Toni's changes to the stock bike that are already in the 3D model but not yet in the app's SeedData
 MODIFICATIONS = {
     "tire_front": {"model": "Rekon Race EXO TR Tan Wall", "spec": "29 × 2.35\" (60-622) · 60 TPI · Dual · TB00219800 · Toni's upgrade from the stock 2.25 · inner tube"},
+    "saddle": {"brand": "?", "model": "Comfort saddle (bigger, softer)", "spec": "Toni's change from the stock Syncros Belcarra (model to confirm from photos)"},
+    "pedals": {"brand": "?", "model": "Silver two-sided trekking pedals", "spec": "Aluminium box frame, pins, reflectors; Toni's change from the stock Femin flats (model to confirm)"},
     "grips": {"brand": "WTB", "model": "Lock-on grips (black)", "spec": "Clamp ring at both ends · Toni's change from the stock neon Syncros grips (exact model to confirm)"},
     "tire_rear": {"model": "Rekon Race EXO TR Tan Wall", "spec": "29 × 2.35\" (60-622) · 60 TPI · Dual · TB00219800 · Toni's upgrade from the stock 2.25 · inner tube"},
 }
