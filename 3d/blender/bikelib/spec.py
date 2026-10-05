@@ -8,6 +8,18 @@ from mathutils import Vector
 
 MM = 0.001
 
+# --- Mesh detail ----------------------------------------------------------------------------
+# Segment counts in bikelib are written for DETAIL = 1.0 (model v3, ~580k triangles).
+# Raise or lower it for the whole bike, or for single parts in DETAIL_PER_PART (e.g. {"tire_front": 1.5}).
+DETAIL = 1.0
+DETAIL_PER_PART = {}
+
+
+def seg(part_name, n, minimum=3):
+    """Segment count n scaled by the detail setting of this part."""
+    return max(minimum, int(round(n * DETAIL_PER_PART.get(part_name, DETAIL))))
+
+
 # --- Official SCOTT "Scale Alloy" geometry, size L ---------------------------------------
 HTA = 69.5            # head tube angle (deg)
 STA = 73.6            # seat tube angle (deg)
@@ -21,9 +33,14 @@ WHEELBASE = 1138.2
 SEAT_TUBE = 480.0
 
 
+STOCK_TYRE_R = 370.0     # mm, = BB_HEIGHT + BB_DROP with the stock 29 x 2.25 tyres
+TYRE_R_MM = 372.0        # Toni's Rekon Race 29 x 2.35: ~2 mm taller (📐 estimate)
+GROUND_LIFT = TYRE_R_MM - STOCK_TYRE_R    # the whole bike sits this much higher on the bigger tyres
+
+
 def P(x, z, y=0.0):
     """Bike-plane millimetres (origin = BB centre, +x forward, +z up, +y left) -> Blender metres."""
-    return Vector((x * MM, y * MM, (z + BB_HEIGHT) * MM))
+    return Vector((x * MM, y * MM, (z + BB_HEIGHT + GROUND_LIFT) * MM))
 
 
 REAR_X = -sqrt(CHAINSTAY ** 2 - BB_DROP ** 2)        # -436.2
@@ -56,9 +73,9 @@ TT_AT_HT = 22.0       # top tube centre this far below the head tube top
 DT_AT_HT = 88.0       # down tube centre meets the head tube this far below its top
 SS_AT_ST = 105.0      # seat stays meet the seat tube this far below its top
 
-# --- Wheels & tyres (Maxxis Rekon Race 29 x 2.25) -------------------------------------------
-TYRE_R = (BB_HEIGHT + BB_DROP) * MM        # 0.370 m, from the official BB height + drop
-TYRE_HALF_W = 0.0285
+# --- Wheels & tyres (stock wheels; Toni's Maxxis Rekon Race 29 x 2.35 EXO TR, ETRTO 60-622) ---
+TYRE_R = TYRE_R_MM * MM                    # outer radius over the centre knobs
+TYRE_HALF_W = 0.0295                       # ~59 mm casing on the stock rim (📐)
 RIM_BEAD_R = 0.311                         # 622 mm BSD
 SPOKES = 32
 FRONT_FLANGE_Y = (0.034, -0.034)           # (disc side, other side)

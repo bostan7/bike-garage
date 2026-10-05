@@ -1,7 +1,8 @@
-"""Wheels (Syncros 32H rims, black 15G spokes 3-cross, Formula CL-51 / Shimano FH-MT401-B hubs, QR)
-and Maxxis Rekon Race 29 x 2.25 tyres."""
+"""Wheels (stock: Syncros 32H rims, black 15G spokes 3-cross, Formula CL-51 / Shimano FH-MT401-B hubs, QR)
+and Toni's tyres: Maxxis Rekon Race 29 x 2.35 EXO TR Tan Wall (replaced the stock 29 x 2.25)."""
 import math
 
+import bmesh
 import bpy
 from mathutils import Vector
 
@@ -10,12 +11,23 @@ from . import meshkit as mk
 from . import spec as S
 from .meshkit import Part, X, Y, Z
 
-# rim cross-section (radius from axle, lateral y): hooked bead seats, double wall, spoke bed
-RIM_PROFILE = [(0.2955, 0.000), (0.2962, 0.0050), (0.2985, 0.0095), (0.3025, 0.0128), (0.3080, 0.0136),
-               (0.3150, 0.0137), (0.3178, 0.0130), (0.3183, 0.0118), (0.3170, 0.0110), (0.3112, 0.0109),
-               (0.3100, 0.0095), (0.3098, 0.0030), (0.3085, 0.000), (0.3098, -0.0030), (0.3100, -0.0095),
-               (0.3112, -0.0109), (0.3170, -0.0110), (0.3183, -0.0118), (0.3178, -0.0130), (0.3150, -0.0137),
-               (0.3080, -0.0136), (0.3025, -0.0128), (0.2985, -0.0095), (0.2962, -0.0050)]
+
+def _rim_profile():
+    """Rim cross-section (radius from axle, lateral y): rounded double-wall body, flat sidewall,
+    hooked bead seat and centre well. Built for +y and mirrored."""
+    half = []
+    for k in range(10):                                   # rounded spoke bed -> sidewall
+        a = math.radians(180 - 90 * k / 9)
+        half.append((0.3080 + 0.0125 * math.cos(a), 0.0136 * math.sin(a)))
+    half += [(0.3118, 0.01375), (0.3150, 0.0137), (0.3170, 0.01345), (0.3180, 0.0129), (0.3184, 0.0121),
+             (0.3180, 0.0114), (0.3168, 0.0110), (0.3115, 0.0109), (0.3104, 0.0101), (0.3100, 0.0090),
+             (0.3098, 0.0030), (0.3094, 0.0012)]
+    centre = [(0.3086, 0.0)]
+    other = [(r, -y) for (r, y) in reversed(half[1:])]
+    return half + centre + other
+
+
+RIM_PROFILE = _rim_profile()
 SPOKE_HOLE_R = 0.2990
 
 
@@ -34,26 +46,34 @@ def _text_around(part, c, text, a0, r_text, y_side, side, height, length, mat):
     mk.add_text(part, text, 1.0, 0.0, mat, xform)
 
 
-def _hub(part, c, flanges, front, mat):
+def _hub(part, c, flanges, front, mat, n):
     yl, yr = flanges
     old = (S.FRONT_OLD if front else S.REAR_OLD) / 2
 
     def flange(y, r):
-        return [(0.0140, y - 0.0050), (r - 0.0015, y - 0.0018), (r, y - 0.0008), (r, y + 0.0008),
-                (r - 0.0015, y + 0.0018), (0.0140, y + 0.0045)]
+        return [(0.0140, y - 0.0050), (r - 0.0030, y - 0.0024), (r - 0.0008, y - 0.0016), (r, y - 0.0006),
+                (r, y + 0.0006), (r - 0.0008, y + 0.0016), (r - 0.0030, y + 0.0024), (0.0140, y + 0.0045)]
+
+    def end(y_out, s):
+        """Lock nut with a small chamfer and a step down to the axle end (s = +1 left, -1 right)."""
+        return [(0.0122, s * (y_out - 0.0050)), (0.0122, s * (y_out - 0.0034)), (0.0112, s * (y_out - 0.0030)),
+                (0.0112, s * (y_out - 0.0008)), (0.0100, s * y_out), (0.0055, s * y_out)]
+    left_end = end(old, 1.0)
+    right_end = list(reversed(end(old, -1.0)))
     if front:
-        prof = [(0.0055, -old), (0.0115, -old), (0.0118, yr - 0.007)] + flange(yr, 0.0245) + \
-               [(0.0128, 0.0)] + flange(yl, 0.0245) + \
-               [(0.0175, yl + 0.006), (0.0175, old - 0.005), (0.0115, old - 0.004), (0.0115, old), (0.0055, old)]
+        prof = right_end + [(0.0118, yr - 0.007)] + flange(yr, 0.0245) + \
+               [(0.0132, -0.012), (0.0128, 0.0), (0.0132, 0.012)] + flange(yl, 0.0245) + \
+               [(0.0175, yl + 0.006), (0.0178, yl + 0.0075), (0.0178, old - 0.008), (0.0168, old - 0.006)] + left_end
     else:
-        prof = [(0.0055, -old), (0.0110, -old), (0.0110, -old + 0.004), (0.0172, -old + 0.006),
-                (0.0172, yr - 0.006)] + flange(yr, 0.0255) + [(0.0150, 0.008)] + flange(yl, 0.0255) + \
-               [(0.0175, yl + 0.006), (0.0175, old - 0.005), (0.0110, old - 0.004), (0.0110, old), (0.0055, old)]
-    mk.revolve(part, c, prof, mat, n=48)
+        prof = right_end + [(0.0172, -old + 0.006), (0.0176, -old + 0.008), (0.0176, yr - 0.008), (0.0172, yr - 0.006)] + \
+               flange(yr, 0.0255) + [(0.0150, 0.0), (0.0150, 0.008)] + flange(yl, 0.0255) + \
+               [(0.0175, yl + 0.006), (0.0178, yl + 0.0075), (0.0178, old - 0.008), (0.0168, old - 0.006)] + left_end
+    mk.revolve(part, c, prof, mat, n=n)
 
 
-def _spokes(part, c, flanges, hub_r):
+def _spokes(part, c, flanges, hub_r, name):
     black, steel = M.get("spoke_black"), M.get("steel")
+    n_spoke, n_nip = S.seg(name, 8), S.seg(name, 10)
     step = 2 * math.pi / S.SPOKES
     cross = 3 * 4 * math.pi / S.SPOKES          # 3-cross: 3 x 720 deg / 32
     for i in range(S.SPOKES):
@@ -65,42 +85,62 @@ def _spokes(part, c, flanges, hub_r):
         hub = c + Vector((hub_r * math.cos(phi), fy, hub_r * math.sin(phi)))
         rim = c + Vector((SPOKE_HOLE_R * math.cos(theta), 0.0015 if left else -0.0015, SPOKE_HOLE_R * math.sin(theta)))
         d = (rim - hub).normalized()
-        mk.cyl(part, hub + d * 0.002, rim, 0.0009, black, n=6, caps=False)
+        mk.cyl(part, hub + d * 0.002, rim - d * 0.010, 0.0009, black, n=n_spoke, caps=False)
         # J-bend: the spoke turns through the flange and ends in a round head on the outside
         out = Y * (0.0035 if left else -0.0035)
-        mk.curve_tube(part, [hub + d * 0.003, hub, hub + out], 0.0009, black, samples=3, n=6)
-        mk.ellipsoid(part, hub + out, (0.0016, 0.0016, 0.0016), black, segs=6, rings=4)
-        # nipple: shaft + head in the rim
-        mk.cyl(part, rim - d * 0.012, rim + d * 0.0005, 0.0019, steel, n=8)
-        mk.cyl(part, rim + d * 0.0005, rim + d * 0.0025, 0.0028, steel, r2=0.0024, n=8)
+        mk.curve_tube(part, [hub + d * 0.003, hub, hub + out], 0.0009, black, samples=4, n=n_spoke)
+        mk.ellipsoid(part, hub + out, (0.0016, 0.0016, 0.0016), black, segs=n_spoke, rings=5)
+        # nipple: square-flatted shaft (for the spoke key) + round head seated in the rim
+        mk.tube_path(part, [rim - d * 0.012, rim - d * 0.004], (0.0019, 0.0019), steel, n=n_nip, power=3.2)
+        mk.cyl(part, rim - d * 0.004, rim + d * 0.0005, 0.0021, steel, n=n_nip)
+        mk.cyl(part, rim + d * 0.0005, rim + d * 0.0025, 0.0028, steel, r2=0.0024, n=n_nip)
 
 
-def _valve(part, c, theta):
+def _ribbed_ring(part, a, b, r, ribs, mat):
+    """Short knurled cylinder from a to b (valve nut, valve cap)."""
+    shape = mk.scratch()
+    _, nn, bb = mk.frame_at(b - a, Y)
+    ring_a = []
+    for k in range(2 * ribs):
+        rr = r + (0.0003 if k % 2 else 0.0)
+        t = 2 * math.pi * k / (2 * ribs)
+        ring_a.append(a + nn * (rr * math.cos(t)) + bb * (rr * math.sin(t)))
+    mk.add_rings(shape, [ring_a, [p + (b - a) for p in ring_a]], None)
+    part.add_bm(shape.bm, mat, smooth=False)
+
+
+def _valve(part, c, theta, name):
     steel, black = M.get("steel"), M.get("black_matte")
     er = Vector((math.cos(theta), 0.0, math.sin(theta)))
     base = c + er * 0.2960
-    mk.cyl(part, base + er * 0.004, base - er * 0.022, 0.0030, steel, n=12)
-    mk.cyl(part, base - er * 0.010, base - er * 0.016, 0.0045, steel, n=12)                 # lock nut
-    mk.cyl(part, base - er * 0.022, base - er * 0.034, 0.0040, black, n=12)                 # cap
+    mk.cyl(part, base + er * 0.004, base - er * 0.022, 0.0030, steel, n=S.seg(name, 16))
+    _ribbed_ring(part, base - er * 0.010, base - er * 0.016, 0.0045, S.seg(name, 12), steel)    # lock nut
+    _ribbed_ring(part, base - er * 0.022, base - er * 0.034, 0.0040, S.seg(name, 10), black)    # cap
 
 
-def _skewer(part, c, front):
+def _skewer(part, c, front, name):
     """QR skewer: shaped lever on the left (+Y), knurled nut on the drive side."""
     old = (S.FRONT_OLD if front else S.REAR_OLD) / 2
     black, steel = M.get("black_anodised"), M.get("steel")
-    mk.cyl(part, c + Y * (old + 0.012), c - Y * (old + 0.012), 0.0025, steel, n=10)
+    mk.cyl(part, c + Y * (old + 0.012), c - Y * (old + 0.012), 0.0025, steel, n=S.seg(name, 12))
     nut = mk.scratch()
-    ring = [c - Y * (old + 0.004) + (X * math.cos(2 * math.pi * k / 36) + Z * math.sin(2 * math.pi * k / 36))
-            * (0.0105 + (0.0006 if k % 2 else 0.0)) for k in range(36)]
-    mk.add_rings(nut, [ring, [p - Y * 0.010 for p in ring]], None)
-    part.add_bm(nut.bm, black, smooth=False, free=False)
-    mk.cyl(part, c + Y * (old + 0.002), c + Y * (old + 0.014), 0.0110, black, r2=0.0095, n=24)  # cam body
+    k_n = S.seg(name, 48)
+    n0 = c - Y * (old + 0.004)
+    ring = [n0 + (X * math.cos(2 * math.pi * k / k_n) + Z * math.sin(2 * math.pi * k / k_n))
+            * (0.0105 + (0.0006 if k % 2 else 0.0)) for k in range(k_n)]
+    mk.add_rings(nut, [ring, [p - Y * 0.009 for p in ring],
+                       [n0 - Y * 0.0105 + (p - n0) * 0.85 for p in ring]], None)
+    part.add_bm(nut.bm, black, smooth=False)
+    mk.cyl(part, c + Y * (old + 0.002), c + Y * (old + 0.014), 0.0110, black, r2=0.0095, n=S.seg(name, 32))  # cam body
+    mk.cyl(part, c + Y * (old + 0.006), c + Y * (old + 0.0175), 0.0032, steel, n=S.seg(name, 12))           # cam pin
     lever = mk.scratch()
     d = Vector((-0.80, 0.0, 0.60)).normalized()
     p0 = c + Y * (old + 0.010)
-    mk.tube_path(lever, [p0, p0 + d * 0.025 + Y * 0.004, p0 + d * 0.050 + Y * 0.003, p0 + d * 0.066],
-                 [(0.0065, 0.0040), (0.0060, 0.0035), (0.0075, 0.0030), (0.0080, 0.0028)], None, n=8, power=3.0)
-    part.add_bm(mk.subdivided(lever, 1), black)
+    mk.tube_path(lever, [p0, p0 + d * 0.020 + Y * 0.004, p0 + d * 0.040 + Y * 0.004, p0 + d * 0.056 + Y * 0.003,
+                         p0 + d * 0.068],
+                 [(0.0065, 0.0040), (0.0060, 0.0034), (0.0068, 0.0030), (0.0080, 0.0029), (0.0070, 0.0026)],
+                 None, n=10, power=3.0)
+    part.add_bm(mk.subdivided(lever, 2), black)
 
 
 def build_wheel(coll, front):
@@ -108,22 +148,66 @@ def build_wheel(coll, front):
     c = S.FRONT_AXLE if front else S.REAR_AXLE
     flanges = S.FRONT_FLANGE_Y if front else S.REAR_FLANGE_Y
     part = Part(name, "Wheels & tyres")
-    mk.revolve(part, c, RIM_PROFILE, M.get("black_matte"), n=128)
+    mk.revolve(part, c, RIM_PROFILE, M.get("black_matte"), n=S.seg(name, 128))
     for side in (-1.0, 1.0):
         for a0 in (math.radians(60), math.radians(240)):
-            _text_around(part, c, "SYNCROS", a0, 0.3045, side * 0.01385, side, 0.0055, 0.055, M.get("tyre_text"))
-    _hub(part, c, flanges, front, M.get("black_anodised"))
-    _spokes(part, c, flanges, 0.0215 if front else 0.0225)
-    _valve(part, c, 2 * math.pi / S.SPOKES * 0.5 + math.pi)
-    _skewer(part, c, front)
+            _text_around(part, c, "SYNCROS", a0, 0.3045, side * 0.01390, side, 0.0055, 0.055, M.get("tyre_text"))
+    _hub(part, c, flanges, front, M.get("black_anodised"), S.seg(name, 64))
+    _spokes(part, c, flanges, 0.0215 if front else 0.0225, name)
+    _valve(part, c, 2 * math.pi / S.SPOKES * 0.5 + math.pi, name)
+    _skewer(part, c, front, name)
     return part.finish(coll, pivot=c, sharp_angle=50.0)
 
 
 # ------------------------------------------------------------------------------------- tyres
+# Toni's Maxxis Rekon Race 29 x 2.35 EXO TR Tan Wall (TB00219800), modelled from Maxxis' product photos
+# (photos/online-reference/maxxis-rekon-race/). The casing crown is half an ellipse above the widest point;
+# below it the sidewall curves in to the bead, which tucks into the rim hook. Black tread rubber covers the
+# crown and the shoulder knobs; the rest of the sidewall is tan.
 
-TYRE_RC = 0.3390        # centre of the tyre cross-section (radius from the axle)
-TYRE_AR = 0.0280        # radial half-height (casing at 0.367, knobs reach 0.370)
+TYRE_RC = 0.3390                         # radius of the widest point of the casing
+TYRE_AR = S.TYRE_R - 0.0022 - TYRE_RC    # crown height above it (centre knobs add ~2.2 mm)
 TYRE_AY = S.TYRE_HALF_W
+BEAD = (0.3180, 0.0143)                  # where the tyre meets the top of the rim hook
+TOE = [(0.3110, 0.0110), (0.3150, 0.0128)]  # bead toe, hidden inside the rim
+TAN_FROM = math.radians(74)              # crown angle (0 = top of the tread) where the black tread rubber ends
+MM = 0.001
+FONTS = "C:/Windows/Fonts/"
+
+
+def _bezier(p0, p1, p2, t):
+    return tuple((1 - t) ** 2 * a + 2 * (1 - t) * t * b + t * t * e for a, b, e in zip(p0, p1, p2))
+
+
+def _side_points(n):
+    """+y sidewall from the bead up to (not including) the widest point, as (r, y)."""
+    return [_bezier(BEAD, (0.3245, TYRE_AY * 0.995), (TYRE_RC, TYRE_AY), k / n) for k in range(n)]
+
+
+def _crown_points(th0, th1, n):
+    return [(TYRE_RC + TYRE_AR * math.cos(th), TYRE_AY * math.sin(th))
+            for th in (th0 + (th1 - th0) * k / n for k in range(n + 1))]
+
+
+def _casing_profiles(n_crown, n_side):
+    """Open (r, y) profiles that share their end points: tan +y sidewall, black crown, tan -y sidewall."""
+    tan_r = TOE + _side_points(n_side) + _crown_points(math.pi / 2, TAN_FROM, 3)
+    black = _crown_points(TAN_FROM, -TAN_FROM, n_crown)
+    tan_l = [(r, -y) for (r, y) in reversed(tan_r)]
+    return tan_r, black, tan_l
+
+
+_HALF = _side_points(40) + _crown_points(math.pi / 2, 0.0, 60)    # r rises along the list
+
+
+def _profile_y(r):
+    """Lateral half-width of the casing surface at radius r (whole sidewall, bead to crown)."""
+    if r <= _HALF[0][0]:
+        return _HALF[0][1]
+    for (r0, y0), (r1, y1) in zip(_HALF, _HALF[1:]):
+        if r <= r1:
+            return y0 + (y1 - y0) * (r - r0) / max(1e-9, r1 - r0)
+    return _HALF[-1][1]
 
 
 def _tyre_surface(c, ang, y):
@@ -136,83 +220,182 @@ def _tyre_surface(c, ang, y):
     return p, nrm
 
 
-def _knob(bm, p, nrm, tang, length, width, height, taper=0.72, ramp=0.0, sink=0.0008):
-    """Tapered tread block; `ramp` lowers the leading edge (Rekon Race centre knobs are ramped)."""
-    lat = nrm.cross(tang).normalized()
-    base = p - nrm * sink
-    vs = []
-    for dz, scale in ((0.0, 1.0), (height + sink, taper)):
-        for sl, sw in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
-            h = dz
-            if dz > 0 and sl > 0:
-                h -= ramp * height
-            vs.append(bm.verts.new(base + tang * (sl * length / 2 * scale) + lat * (sw * width / 2 * scale) + nrm * h))
-    b, t = vs[:4], vs[4:]
-    faces = [bm.faces.new((b[3], b[2], b[1], b[0])), bm.faces.new((t[0], t[1], t[2], t[3]))]
-    for i in range(4):
-        j = (i + 1) % 4
-        faces.append(bm.faces.new((b[i], b[j], t[j], t[i])))
-    return faces
+# --- tread -------------------------------------------------------------------------------------
+# Measured on Maxxis' straight-on tread photo (9.4 px/mm). The pattern repeats every 3 rows (~32.5 mm),
+# 72 times around the tyre. Knob outlines are (u, v) in mm: u = along the tread (+u = next row = downwards
+# on the front of the tyre, as in the photo), v = across it (+v = left side of the bike); drawn for knobs on
+# the -v half and mirrored for the +v half.
+
+def _slot(cu, cv, length, width, angle_deg):
+    a = math.radians(angle_deg)
+    du, dv = math.cos(a), math.sin(a)
+    pu, pv = -dv, du
+    return [(cu + sl * du * length / 2 + sw * pu * width / 2, cv + sl * dv * length / 2 + sw * pv * width / 2)
+            for sl, sw in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+
+
+KNOBS = {
+    # row A centre: trapezoid, wide edge first
+    "u_plain": ([(-3.5, -4.25), (3.5, -3.0), (3.5, 3.0), (-3.5, 4.25)], []),
+    # row C centre: wider trapezoid with a notch in the wide edge
+    "u_wide": ([(-3.9, -5.25), (-3.9, -1.5), (-2.5, -1.0), (-2.5, 1.0), (-3.9, 1.5), (-3.9, 5.25),
+                (3.9, 3.75), (3.9, -3.75)], []),
+    # rows A and C flankers: square with a diagonal sipe slot
+    "sipe": ([(-3.4, -3.4), (3.4, -3.4), (3.4, 3.4), (-3.4, 3.4)], [_slot(0.0, 0.0, 4.0, 0.7, 45)]),
+    # row B centre pair: notch in the first edge, on the side facing the tyre centre
+    "pair": ([(-3.5, -4.0), (-3.5, 0.9), (-1.3, 0.9), (-1.3, 2.1), (-3.5, 2.1), (-3.5, 4.0), (3.5, 4.0),
+              (3.5, -4.0)], []),
+    # row B transition knob (placed turned by 25 deg), notch in the first edge
+    "trans": ([(-3.25, -4.0), (-3.25, -0.5), (-1.25, -0.5), (-1.25, 0.5), (-3.25, 0.5), (-3.25, 4.0),
+               (3.25, 4.0), (3.25, -4.0)], []),
+    # shoulder: inner block with a sipe across it + lower outer block behind it (together an L)
+    "sh_in": ([(-3.8, -3.1), (3.8, -3.1), (3.8, 3.1), (-3.8, 3.1)], [_slot(0.6, 0.0, 3.4, 0.55, 90)]),
+    "sh_out": ([(-2.9, -2.25), (2.9, -2.25), (2.9, 2.25), (-2.9, 2.25)], []),
+}
+KNOB_SCALE = 1.12     # outlines above x 1.12 = knob sizes on the 2.35 (checked side by side with the photo)
+
+# (phase in the 3-row period, knob, lateral position mm (-v half), height mm, turn deg, ramp)
+_LAYOUT_HALF = [
+    (0.000, "sipe", -9.6, 2.2, 0, 0.0),
+    (1 / 3, "pair", -5.2, 2.2, 0, 0.0),
+    (1 / 3, "trans", -17.8, 2.6, -25, 0.0),
+    (2 / 3, "sipe", -12.8, 2.2, 90, 0.0),          # row C slots lean the other way
+    (0.180, "sh_in", -23.3, 3.0, 0, 0.0),
+    (0.310, "sh_out", -27.4, 3.4, 0, 0.0),
+    (2 / 3, "sh_in", -23.3, 3.0, 0, 0.0),
+    (0.797, "sh_out", -27.4, 3.4, 0, 0.0),
+]
+TREAD_LAYOUT = [(0.000, "u_plain", 0.0, 2.0, 0, 0.2), (2 / 3, "u_wide", 0.0, 2.0, 0, 0.2)] + \
+    [(ph, k, y, h, t, rp) for (ph, k, y, h, t, rp) in _LAYOUT_HALF] + \
+    [(ph, k, -y, h, -t, rp) for (ph, k, y, h, t, rp) in _LAYOUT_HALF]
+TREAD_PERIODS = 72
+
+
+def _knob_templates():
+    """One small mesh per knob shape (extruded outline with sipe holes), z from 0 (base) to 1 (top)."""
+    out = {}
+    for key, (outline, holes) in KNOBS.items():
+        for mirror in (1.0, -1.0):
+            k = KNOB_SCALE * MM
+            o = [(u * k, mirror * v * k) for (u, v) in outline]
+            hs = [[(u * k, mirror * v * k) for (u, v) in h] for h in holes]
+            bm = mk.plate2d(o, hs, thickness=1.0)
+            bmesh.ops.translate(bm, verts=bm.verts[:], vec=Vector((0.0, 0.0, 0.5)))
+            me = bpy.data.meshes.new("tmp_knob_" + key)
+            bm.to_mesh(me)
+            bm.free()
+            out[key, mirror] = (me, max(abs(u) for u, _ in outline) * k)
+    return out
+
+
+def _place_knob(bm, template, p, nrm, tang, h, turn=0.0, taper=0.92, ramp=0.0, sink=0.0008):
+    """Copy a knob template onto the tyre: base sunk into the casing, sides tapered, optional ramp
+    that lowers the +u end of the top."""
+    me, umax = template
+    lat = tang.cross(nrm).normalized()
+    cr, sr = math.cos(turn), math.sin(turn)
+    n0, f0 = len(bm.verts), len(bm.faces)
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    bm.faces.ensure_lookup_table()
+    for i in range(n0, len(bm.verts)):
+        v = bm.verts[i]
+        x, y, z = v.co
+        s = 1.0 - (1.0 - taper) * z
+        hz = z * (h + sink) - sink - ramp * h * z * max(0.0, x) / umax
+        x, y = x * cr - y * sr, x * sr + y * cr
+        v.co = p + tang * (x * s) + lat * (y * s) + nrm * hz
+    return [bm.faces[i] for i in range(f0, len(bm.faces))]
+
+
+# --- sidewall graphics ---------------------------------------------------------------------------
+# Order and sizes from Maxxis' Tan Wall photo: REKON RACE (white, black outline) - 29X2.35 / 60 PSI -
+# EXO PROTECTION badge - TR / TUBELESS READY. Letter tops face the tread. MAXXIS sits on the opposite
+# side of the tyre (layout as on the stock tyres in SCOTT's photo).
+
+def _sidewall_frame(c, a_mid, side, s, r, lift):
+    """Point at arc length s (along the reading direction) from a_mid, radius r, `lift` off the casing."""
+    a = a_mid + side * s / r
+    return c + Vector((r * math.cos(a), side * (_profile_y(r) + lift), r * math.sin(a)))
+
+
+def _logo(part, c, a_mid, side, text, s_mm, r_mm, height_mm, length_mm, layers, font, shear=0.0, space=1.0):
+    """Text centred at (s_mm, r_mm); layers = [(outline offset, lift mm, material)], drawn bottom to top."""
+    probe = mk._text_mesh(text, 1.0, 0.0, FONTS + font, shear=shear, space=space)
+    xs = [v.co.x for v in probe.vertices]
+    ys = [v.co.y for v in probe.vertices]
+    bpy.data.meshes.remove(probe)
+    cx, cy = (max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2
+    sx, sy = length_mm * MM / (max(xs) - min(xs)), height_mm * MM / (max(ys) - min(ys))
+    r0 = r_mm * MM
+    for offset, lift, mat in layers:
+        def xform(v, lift=lift):
+            return _sidewall_frame(c, a_mid, side, s_mm * MM + (v.x - cx) * sx, r0 + (v.y - cy) * sy, lift * MM)
+        mk.add_text(part, text, 1.0, 0.0, mat, xform, FONTS + font, max_edge=0.25,
+                    offset=offset, shear=shear, space=space)
+
+
+def _panel(part, c, a_mid, side, s_mm, r_mm, length_mm, height_mm, lift_mm, mat, nu=12, nv=3):
+    """Flat label panel (EXO badge) following the sidewall."""
+    bm = part.bm
+    rows = []
+    for j in range(nv + 1):
+        r = (r_mm + height_mm * (j / nv - 0.5)) * MM
+        rows.append([bm.verts.new(_sidewall_frame(c, a_mid, side, (s_mm + length_mm * (i / nu - 0.5)) * MM, r,
+                                                  lift_mm * MM)) for i in range(nu + 1)])
+    faces = [bm.faces.new((a[i], a[i + 1], b[i + 1], b[i])) for a, b in zip(rows, rows[1:]) for i in range(nu)]
+    part.tag(faces, mat, smooth=False)
+
+
+def _sidewall_graphics(part, c, a_mid, side):
+    white, black, red = M.get("tyre_text"), M.get("decal_black"), M.get("exo_red")
+    outlined = [(0.07, 0.30, black), (0.0, 0.45, white)]
+    _logo(part, c, a_mid, side, "REKON RACE", -61, 336.5, 13.0, 150, outlined, "BERNHC.TTF", shear=0.22)
+    _logo(part, c, a_mid, side, "29X2.35", 35, 339.5, 3.8, 24, [(0.0, 0.30, black)], "arialbd.ttf")
+    _logo(part, c, a_mid, side, "60 PSI", 35, 334.0, 3.8, 17, [(0.0, 0.30, black)], "arialbd.ttf")
+    _panel(part, c, a_mid, side, 76, 337.0, 36, 14.0, 0.25, black)
+    _panel(part, c, a_mid, side, 76, 332.3, 34, 3.6, 0.35, red)
+    _logo(part, c, a_mid, side, "EXO", 76, 339.8, 7.0, 20, [(0.0, 0.45, white)], "FRAHVIT.TTF")
+    _logo(part, c, a_mid, side, "PROTECTION", 76, 332.3, 2.2, 28, [(0.0, 0.50, white)], "arialbd.ttf")
+    _logo(part, c, a_mid, side, "TR", 119, 337.8, 8.5, 26, outlined, "ariblk.ttf", shear=0.25)
+    _logo(part, c, a_mid, side, "TUBELESS READY", 119, 331.8, 2.4, 34, [(0.0, 0.30, red)], "arialbd.ttf")
+    _logo(part, c, a_mid + math.pi, side, "MAXXIS", 0, 338.0, 11.0, 120, [(0.06, 0.30, black), (0.0, 0.45, white)],
+          "ariblk.ttf", space=1.35)
 
 
 def build_tyre(coll, front):
     name = "tire_front" if front else "tire_rear"
     c = S.FRONT_AXLE if front else S.REAR_AXLE
     part = Part(name, "Wheels & tyres")
-    rubber = M.get("rubber")
-    prof = [(TYRE_RC + TYRE_AR * math.cos(2 * math.pi * k / 36), TYRE_AY * math.sin(2 * math.pi * k / 36))
-            for k in range(36)]
-    mk.revolve(part, c, prof, rubber, n=144)
-    # bead line just above the rim on both sides
+    rubber, tan = M.get("rubber"), M.get("tanwall")
+    n_around = S.seg(name, 128)
+    tan_r, black, tan_l = _casing_profiles(S.seg(name, 36), S.seg(name, 8))
+    for prof, mat in ((tan_r, tan), (black, rubber), (tan_l, tan)):
+        mk.revolve(part, c, prof, mat, n=n_around, closed=False)
+    # moulded rim line just above the bead on both sides
     for side in (-1.0, 1.0):
-        r = 0.3215
-        cos_t = (r - TYRE_RC) / TYRE_AR
-        y = side * (TYRE_AY * math.sqrt(1 - cos_t * cos_t) + 0.0003)
-        ring = [c + Vector((r * math.cos(2 * math.pi * k / 144), y, r * math.sin(2 * math.pi * k / 144)))
-                for k in range(144)]
+        r = 0.3240
+        y = side * (_profile_y(r) + 0.0002)
+        ring = [c + Vector((r * math.cos(2 * math.pi * k / n_around), y, r * math.sin(2 * math.pi * k / n_around)))
+                for k in range(n_around)]
         ring.append(ring[0])
-        mk.tube_path(part, ring, (0.0007, 0.0007), rubber, n=5, caps=False)
+        mk.tube_path(part, ring, (0.0005, 0.0005), tan, n=6, caps=False)
 
-    # Rekon Race tread
-    rows = 150
+    templates = _knob_templates()
     faces = []
-    for k in range(rows):
-        ang = 2 * math.pi * k / rows
-        odd = k % 2 == 1
-        if odd:
-            knobs = [(0.0, 0.0052, 0.0052, 0.0028, 0.45), (-0.0128, 0.0058, 0.0046, 0.0031, 0.25),
-                     (0.0128, 0.0058, 0.0046, 0.0031, 0.25)]
-        else:
-            knobs = [(-0.0048, 0.0050, 0.0040, 0.0027, 0.45), (0.0048, 0.0050, 0.0040, 0.0027, 0.45)]
-        knobs += [(-0.0218 if odd else -0.0226, 0.0072, 0.0058, 0.0038, 0.0),
-                  (0.0226 if odd else 0.0218, 0.0072, 0.0058, 0.0038, 0.0)]
-        for y, l, w, h, ramp in knobs:
-            a = ang + (0.010 if odd else 0.0)
-            p, nrm = _tyre_surface(c, a, y)
-            t = Vector((-math.sin(a), 0.0, math.cos(a)))
-            t = (t - nrm * t.dot(nrm)).normalized()
-            faces += _knob(part.bm, p, nrm, t, l, w, h, ramp=ramp)
+    for k in range(TREAD_PERIODS):
+        for phase, key, y_mm, h_mm, turn, ramp in TREAD_LAYOUT:
+            a = 2 * math.pi * (k - phase) / TREAD_PERIODS
+            p, nrm = _tyre_surface(c, a, y_mm * MM)
+            t0 = Vector((math.sin(a), 0.0, -math.cos(a)))      # +u: towards the next row (decreasing angle)
+            tang = (t0 - nrm * t0.dot(nrm)).normalized()
+            mirror = 1.0 if y_mm <= 0 else -1.0
+            faces += _place_knob(part.bm, templates[key, mirror], p, nrm, tang, h_mm * MM,
+                                 turn=math.radians(turn), ramp=ramp)
+    for me, _ in templates.values():
+        bpy.data.meshes.remove(me)
     part.tag(faces, rubber, smooth=False)
 
-    # MAXXIS on both sidewalls (twice per side), REKON RACE and size once per side
-    txt = M.get("tyre_text")
-    r_text = 0.3505
     for side in (-1.0, 1.0):
-        for a0, text, height, length in ((math.radians(118), "MAXXIS", 0.0110, 0.085),
-                                         (math.radians(298), "MAXXIS", 0.0110, 0.085),
-                                         (math.radians(208), "REKON RACE", 0.0065, 0.080),
-                                         (math.radians(30), "29 x 2.25", 0.0050, 0.040)):
-            probe = mk._text_mesh(text, 1.0, 0.0)
-            xs = [v.co.x for v in probe.vertices]
-            ys = [v.co.y for v in probe.vertices]
-            bpy.data.meshes.remove(probe)
-            sx, sy = length / (max(xs) - min(xs)), height / (max(ys) - min(ys))
-
-            def xform(v, a0=a0, side=side, sx=sx, sy=sy):
-                a = a0 + side * (v.x * sx) / r_text
-                r = r_text + v.y * sy
-                cos_t = max(-1.0, min(1.0, (r - TYRE_RC) / TYRE_AR))
-                y = TYRE_AY * math.sqrt(1.0 - cos_t * cos_t) + 0.0005
-                return c + Vector((r * math.cos(a), side * y, r * math.sin(a)))
-            mk.add_text(part, text, 1.0, 0.0, txt, xform)
-    return part.finish(coll, pivot=c, sharp_angle=50.0)
+        _sidewall_graphics(part, c, math.radians(145), side)
+    return part.finish(coll, pivot=c, sharp_angle=40.0)

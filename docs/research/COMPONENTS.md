@@ -103,6 +103,14 @@ What each part looks like and its key measurements (for the 3D model), plus usef
 - ✅ 60 TPI, Maxxis logo on the sidewall, black wall.
 - 🟡 Wire-bead version ~680–790 g; outer diameter ~736–740 mm.
 - **Look:** low, closely spaced ramped centre knobs, taller shoulder knobs. Fast-rolling XC tread.
+- ✅ **Toni's bike (modification):** both tyres replaced with **Maxxis Rekon Race 29 × 2.35" EXO TR Tan Wall** (same tread, ~2.5 mm wider than stock, tan sidewalls). Wheels are still stock.
+  - Bought **second-hand on Vinted for €27.80** (🔍 for the pair?). Previous owner rode **~500 km** on them, Toni **~100 km** → ~600 km total so far. 🔍 Install date.
+  - Run **with inner tubes** (not tubeless), although the tyres are tubeless-ready.
+  - ✅ Spec (maxxis.com/int): part **TB00219800**, 29X2.35, ETRTO **60-622**, **60 TPI** (the Tan Wall 2.35 only exists in 60 TPI), folding, **Dual** compound, EXO/TR, max 60 psi, **837 g**. (Black 2.35 versions: TB00139700 60 TPI 847 g, TB00139800 120 TPI 801 g.)
+  - ✅ Look (Maxxis photos, `photos/online-reference/maxxis-rekon-race/`): black tread rubber over the crown and shoulder knobs, rest of the sidewall tan (~sRGB 200/160/128 in studio light). Sidewall graphics in this order, letter tops towards the tread: big slanted **REKON RACE** (white, thick black outline) · **29X2.35 / 60 PSI** (small, black) · **EXO** badge (white on black, red PROTECTION band) · **TR** (white, black outline) with **TUBELESS READY** in red-orange below. MAXXIS logo on the opposite side of the tyre (📐 position and style taken from the stock tyre in SCOTT's photo; the Tan Wall photos don't show it).
+  - ✅ Tread (measured on Maxxis' straight-on tread photo): repeats every 3 rows (~32.5 mm, 72× around): row A = U-shaped centre knob + square knobs with a diagonal slot; row B = notched centre pair + angled transition knobs; row C = wide notched U knob + slotted square knobs further out; L-shaped shoulder blocks (inner block with a slot + lower outer block), 2 per repeat.
+  - Note: the newer **29X2.40 WT** Rekon Race (Maxxis US photos) has a different, smaller sidewall graphic. Not Toni's tyre.
+  - 📐 3D size: ~58 mm wide, outer diameter ~742 mm (stock 2.25: tested 55–56 mm wide; centre knobs 1.9 mm, edge knobs 3.5 mm high, bicyclerollingresistance.com).
 
 ---
 
@@ -124,3 +132,4 @@ What each part looks like and its key measurements (for the 3D model), plus usef
 - `fork`: note possible X1 32 variant; A2C 501 mm
 - `chain`: replace-at 0.5 %; colour silver
 - `frame`: add derailleur hanger #254094 (verify)
+- `tire_front` / `tire_rear`: log a replacement → Rekon Race 29×2.35 EXO TR, second-hand, €27.80, ~500 km already on them when fitted, with inner tubes

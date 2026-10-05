@@ -98,9 +98,20 @@ def render_views(out_dir, views=None):
                             ("front", (4.0, 0.0, 0.9), (1000, 1200)),
                             ("top", (0.13, 0.0, 5.0), (1200, 1000)),
                             ("cockpit", (0.0, -0.9, 1.55), (1400, 1000)),
-                            ("drivetrain", (-0.1, -1.1, 0.55), (1400, 1000))):
-        cam = _camera(scene, "cam_" + name, loc, (0, 0, 0), lens=50 if name in ("cockpit", "drivetrain") else 70)
-        target = {"cockpit": (0.52, 0.0, 1.02), "drivetrain": (-0.2, 0.0, 0.33)}.get(name, centre)
+                            ("drivetrain", (-0.1, -1.1, 0.55), (1400, 1000)),
+                            ("wheel_close", (S.FRONT_AXLE.x + 0.55, -0.75, 0.62), (1400, 1000)),
+                            ("tyre_close", (S.FRONT_AXLE.x + 0.62, -0.36, 0.66), (1400, 1000)),
+                            # straight at the front of the front tyre, like Maxxis' tread photo
+                            ("tread_front", (S.FRONT_AXLE.x + 0.95, 0.0, S.FRONT_AXLE.z + 0.10), (1000, 1000)),
+                            # drive-side sidewall graphics of the front tyre (REKON RACE ... TR)
+                            ("tyre_logo", (S.FRONT_AXLE.x - 0.20, -0.62, S.FRONT_AXLE.z + 0.30), (1400, 1000))):
+        lens = {"cockpit": 50, "drivetrain": 50, "wheel_close": 50, "tyre_close": 50, "tread_front": 135,
+                "tyre_logo": 60}.get(name, 70)
+        cam = _camera(scene, "cam_" + name, loc, (0, 0, 0), lens=lens)
+        target = {"cockpit": (0.52, 0.0, 1.02), "drivetrain": (-0.2, 0.0, 0.33),
+                  "wheel_close": tuple(S.FRONT_AXLE), "tyre_close": (S.FRONT_AXLE.x + 0.30, -0.02, S.FRONT_AXLE.z + 0.17),
+                  "tread_front": (S.FRONT_AXLE.x + 0.37, 0.0, S.FRONT_AXLE.z + 0.02),
+                  "tyre_logo": (S.FRONT_AXLE.x - 0.25, -0.03, S.FRONT_AXLE.z + 0.20)}.get(name, centre)
         _look_at(cam, target)
         all_views[name] = (cam, size)
 

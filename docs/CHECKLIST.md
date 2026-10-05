@@ -4,7 +4,7 @@ Update this file after every work session.
 
 **Legend:** ✅ done · 🔲 to do · 🚧 in progress · ⛔ blocked (see the *Blocked* section for why)
 
-**Last updated:** 2026-10-02
+**Last updated:** 2026-10-05
 **Current phase:** Phase 1 — 3D model v1 done (`3d/models/bike.glb`). Next: refine with Toni's photos, then Phase 2 (3D garage in the app)
 
 ---
@@ -73,6 +73,14 @@ Update this file after every work session.
 - ✅ Interactive review page (rotate, zoom, tap a part): (local page)
 - ✅ **Model v2 (more detail, requested by Toni):** fused/welded frame with gusset and weld fillets, cast fork crown + lowers, shaped tyre knobs (150 rows), real sprocket teeth, windowed cassette cogs on a spider, drilled rotors, spoke J-bends, valve, detailed levers/calipers/stem/shifter/grips, platform pedals with pins; ~330k triangles, 9.8 MB
 - 🔲 Toni reviews model v2
+- 🔲 **Model v3 (~580k triangles, requested by Toni):** plan made 2026-10-05 (per-part budget + what to add). Toni approved the ~580k budget; maybe higher later for some parts only (so the detail setting should work per part). Tyres in v3 = Toni's Rekon Race **29×2.35** (not stock 2.25); wheels confirmed stock.
+  - ✅ Detail setting (`DETAIL` / `DETAIL_PER_PART` in `spec.py`) + per-part budget report in `build_bike.py`
+  - ✅ Pass 1: wheels and tyres (2.35 Rekon Race EXO TR, new casing, knobs, sidewall text; rim, nipples, hubs, QR, valve). Viewer republished
+  - ✅ Pass 1 fix (Toni: "tyres not accurate"): tyres rebuilt from 14 downloaded Maxxis/shop photos as the **Tan Wall** version (TB00219800, 60 TPI): tan sidewalls, real tread pattern, real sidewall graphics. Tyre budget raised to 62k each. Total now 427k
+  - 🔲 Pass 2: drivetrain (chain, cassette, crankset, derailleur, BB)
+  - 🔲 Pass 3: frame and fork
+  - 🔲 Pass 4: brakes and cockpit
+  - 🔲 Pass 5: saddle, seatpost, pedals (⛔ pedal shape needs Toni's photos)
 - ⛔ Add Toni's modifications + check details against own photos (stem length, crank length, fork decal, grips)
 - 🔲 Polish later: derailleur body shape, optional Draco compression for the app
 
@@ -156,6 +164,9 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-05 | Tyres rebuilt as Rekon Race 29×2.35 **Tan Wall** from Maxxis photos (downloaded to `photos/online-reference/maxxis-rekon-race/`): tan sidewalls, measured 3-row tread, REKON RACE / EXO / TR / MAXXIS graphics. TPI answered: Tan Wall 2.35 only comes in 60 TPI. Viewer republished. |
+| 2026-10-05 | Model v3 pass 1 (wheels & tyres): Toni's 29×2.35 Rekon Race EXO TR tyres (2nd-hand, Vinted €27.80, ~600 km, inner tubes) modelled; detail setting + budget report added; viewer now loads the model from text chunks (too big to embed). 407k triangles. |
+| 2026-10-05 | Planned model v3: measured v2 per part (329,884 triangles), made a per-part budget of ~580k with the details to add. No code changed. |
 | 2026-10-05 | Model v2: much more detailed mesh (fused welded frame, cast fork, shaped tread, real sprocket teeth, drilled rotors, detailed controls). Viewer updated to v2. |
 | 2026-10-02 | Phase 1: official references downloaded; Blender generator written; 3D model v1 built, checked against SCOTT's photo, exported to `3d/models/bike.glb` (23 named parts). |
 | 2026-10-02 | Online research: identified the exact bike (article 280483, Dark Grey), official spec + geometry, 3D coordinates, per-part research, official 360° video found. Docs: BIKE-SPECS.md rewritten, research/COMPONENTS.md, research/SOURCES.md. |

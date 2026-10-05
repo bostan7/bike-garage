@@ -285,13 +285,18 @@ def ellipsoid(part, center, radii, mat, rot=None, segs=16, rings=10):
 
 # -------------------------------------------------------------------------------------- text
 
-def _text_mesh(text, size, extrude, font_path=FONT_PATH):
+def _text_mesh(text, size, extrude, font_path=FONT_PATH, offset=0.0, shear=0.0, space=1.0):
+    """offset > 0 grows every glyph outline (for an outline layer behind the letters),
+    shear slants the letters (italic), space scales the letter spacing."""
     cu = bpy.data.curves.new("tmp_text", "FONT")
     cu.body = text
     cu.size = size
     cu.extrude = extrude
     cu.align_x = 'CENTER'
     cu.align_y = 'CENTER'
+    cu.offset = offset
+    cu.shear = shear
+    cu.space_character = space
     cu.resolution_u = 3          # fewer triangles per glyph curve
     try:
         cu.font = bpy.data.fonts.load(font_path, check_existing=True)
@@ -322,10 +327,11 @@ def _split_long_edges(me, max_len, rounds=4):
     bm.free()
 
 
-def add_text(part, text, size, extrude, mat, xform, font_path=FONT_PATH, max_edge=0.12):
+def add_text(part, text, size, extrude, mat, xform, font_path=FONT_PATH, max_edge=0.12, **style):
     """Text mesh; xform(Vector local) -> Vector world. Local: x along the text, y up, z = depth.
-    max_edge: longest allowed edge in the text plane, relative to the font size."""
-    me = _text_mesh(text, size, extrude, font_path)
+    max_edge: longest allowed edge in the text plane, relative to the font size.
+    style: offset / shear / space, see _text_mesh."""
+    me = _text_mesh(text, size, extrude, font_path, **style)
     _split_long_edges(me, max_edge * size)
     for v in me.vertices:
         v.co = xform(Vector(v.co))

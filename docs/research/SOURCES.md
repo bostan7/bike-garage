@@ -22,6 +22,13 @@
 - Bike Insights, 2022 Scale 940 L (carbon geometry, **not** our frame, kept as a warning): https://bikeinsights.com/bike-geometries/635b396af8f299001c317f12-2022-scott-sports-scale-940-large
 - Westbrook Cycles part finder (hanger, seat clamp): https://www.westbrookcycles.co.uk/part-finder/scott/scale/scale_940_2022
 
+## Maxxis Rekon Race 29×2.35 EXO TR Tan Wall (Toni's tyres)
+Saved to `photos/online-reference/maxxis-rekon-race/` (local only, not in git):
+- maxxis.com/int product page (spec table, part TB00219800): https://www.maxxis.com/int/tire/rekon-race/ → `bike-mtb-rekon-race-skw.webp/.png` (Tan Wall 2.35, sidewall graphics), `rekonrace.jpg` (black 2.25), `rekon-race_tread*.jpg` (straight-on tread, used to measure the knobs)
+- maxxis.com/us (newer 2.40 WT version, tread and tan photos for comparison): `us_REKON_Race_*.jpg`
+- Shop photos of the Tan Wall 2.35: `shop_thelostco_tan.jpg`, `shop_northwest_tan.jpg`, `shop_veloplus_tan.webp`, `shop_mtbdirect_tan.jpg` (2.4)
+- bicyclerollingresistance.com test (black 2.25; knob heights, side views): `brr_1-3.jpg`, https://www.bicyclerollingresistance.com/mtb-reviews/maxxis-rekon-race-exo-tr
+
 ## Real-world photos (other owners)
 - buycycle: used **2022 Scale 980, size L, XCR32**, 25 photos (listing marked deleted/sold, photos still visible; tyres changed to tan wall): https://buycycle.com/en-de/product/scale-980-2022-57579
 - buycycle: used 2021 Scale 980: https://buycycle.com/en-ee/product/scale-980-2021-50570
