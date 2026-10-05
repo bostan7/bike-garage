@@ -40,6 +40,9 @@ The most useful drivetrain reference is SCOTT's own studio side photo (`scott-of
 ## Fork references (pass 3)
 Saved to `photos/online-reference/suntour-xcr32/` (local only): aftermarket XCR 32 / XCR coil forks and the XCR lockout lever (velomine, northwestbicycle Shopify JSON). Shapes only: aftermarket decals are blue, Toni's OEM fork follows SCOTT's photo (neon-yellow SR SUNTOUR low on the legs, dark grey slash graphics).
 
+## Brakes and cockpit references (pass 4)
+Saved to `photos/online-reference/cockpit-brakes/` (local only): BL-MT200 / BR-MT200 (lever + caliper), SM-RT10 180/160, SL-M6100-R, WTB Wafel and Comfort Zone lock-on grips, Suntour lockout lever (velomine, playtristore, northwestbicycle, thelostco). SCOTT 360° frames 013 (non-drive side: both calipers) and 017 (cockpit from the front).
+
 ## Real-world photos (other owners)
 - buycycle: used **2022 Scale 980, size L, XCR32**, 25 photos (listing marked deleted/sold, photos still visible; tyres changed to tan wall): https://buycycle.com/en-de/product/scale-980-2022-57579
 - buycycle: used 2021 Scale 980: https://buycycle.com/en-ee/product/scale-980-2021-50570

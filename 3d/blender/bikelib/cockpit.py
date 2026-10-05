@@ -1,4 +1,5 @@
-"""Cockpit: Syncros stem (6 deg), Syncros 740 mm flat bar (9 deg backsweep), neon grips, Deore 12s shifter."""
+"""Cockpit: Syncros stem (6 deg), Syncros 740 mm flat bar (9 deg backsweep), Toni's black WTB lock-on grips,
+Deore 12s shifter."""
 import math
 
 import bpy
@@ -66,15 +67,15 @@ def build_stem(coll):
         p = c + back * 0.021 + S.AXIS_UP * dz
         mk.cyl(part, p + Y * 0.013, p - Y * 0.013, 0.0045, steel, n=12)
         mk.cyl(part, p + Y * 0.013, p + Y * 0.015, 0.0030, black, n=6)
-    # 4-bolt faceplate
+    # 2-bolt faceplate (SCOTT spec)
     fp = mk.plate2d(mk.rounded_rect(0.0, 0.0, 0.048, 0.040, 0.008),
                     holes=[mk.rounded_rect(0.0, 0.0, 0.016, 0.012, 0.004)], thickness=0.008, bevel=0.0015)
     mk.place(fp, b + d * 0.020, Y, up, d)
     part.add_bm(fp, black)
-    for dy in (-0.016, 0.016):
-        for dz in (-0.013, 0.013):
-            p = b + d * 0.024 + Y * dy + up * dz
-            mk.cyl(part, p, p + d * 0.0025, 0.0040, steel, n=12)
+    for dz in (-0.0135, 0.0135):
+        p = b + d * 0.024 + up * dz
+        mk.cyl(part, p - d * 0.001, p + d * 0.0028, 0.0046, steel, n=16)
+        mk.cyl(part, p + d * 0.0028, p + d * 0.0030, 0.0022, M.get("black_gloss"), n=6)     # hex socket
     _logo(part, "SYNCROS", c.lerp(b, 0.52) + up * 0.0156, d, Y, 0.030, M.get("tyre_text"))
     return part.finish(coll, sharp_angle=50.0)
 
@@ -89,7 +90,7 @@ def build_handlebar(coll):
         ay = abs(p.y - bar_center().y)
         r = 0.0159 if ay < 0.04 else (0.0111 if ay > 0.10 else 0.0159 + (0.0111 - 0.0159) * (ay - 0.04) / 0.06)
         prof.append((r, r))
-    mk.tube_path(part, pts, prof, black, n=32)
+    mk.tube_path(part, pts, prof, black, n=40)
     for side in (-1.0, 1.0):
         p = bar_point(side * 0.075)
         _logo(part, "SYNCROS", p + Z * 0.0136, Y * side if side > 0 else -Y, -X if side > 0 else X, 0.035,
@@ -98,29 +99,33 @@ def build_handlebar(coll):
 
 
 def build_grips(coll):
+    """Toni's grips: black WTB lock-on, clamp ring with a bolt at both ends, waffle-pattern rubber
+    (WTB Wafel-like; exact model to be confirmed by Toni)."""
     part = Part("grips", "Cockpit")
-    neon, black, steel = M.get("neon_yellow"), M.get("black_matte"), M.get("steel")
+    rubber, black, steel = M.get("rubber"), M.get("black_anodised"), M.get("steel")
     for side in (1.0, -1.0):
         y_end = side * S.BAR_HALF
         y_in = side * (S.BAR_HALF - S.GRIP_LEN)
         a, b = bar_point(y_in), bar_point(y_end)
         d = (b - a).normalized()
-        # ribbed grip body: radius varies along its length
-        n_rings = 60
-        pts, prof = [], []
-        for i in range(n_rings + 1):
-            t = i / n_rings
-            pts.append(a.lerp(b, t))
-            rib = 0.0007 if (i % 4 in (1, 2)) and 0.08 < t < 0.95 else 0.0
-            bulge = 0.0012 * math.sin(math.pi * min(1.0, t * 1.15))
-            r = 0.0158 + bulge + rib
-            prof.append((r, r))
-        mk.tube_path(part, pts, prof, neon, n=28)
-        # lock ring with bolt, end plug
-        mk.cyl(part, a - d * 0.010, a + d * 0.002, 0.0172, black, n=32)
-        q = a - d * 0.004 + Z * -0.0175
-        mk.cyl(part, q, q + Z * -0.003, 0.0022, steel, n=8)
-        mk.cyl(part, b - d * 0.001, b + d * 0.004, 0.0160, black, r2=0.0150, n=32)
+        ring_w = 0.0085
+        g0, g1 = a + d * ring_w, b - d * ring_w
+        L = (g1 - g0).length
+        mk.cyl(part, g0, g1, 0.0152, rubber, n=32, caps=False)                                  # rubber core
+        _, nn, bb = mk.frame_at(d, Z)
+        n_around, n_along = 16, max(6, int(L / 0.0062))
+        for i in range(n_along):                                                                 # waffle blocks
+            c = g0.lerp(g1, (i + 0.5) / n_along)
+            for k in range(n_around):
+                ang = 2 * math.pi * (k + 0.5 * (i % 2)) / n_around
+                rd = nn * math.cos(ang) + bb * math.sin(ang)
+                mk.box(part, c + rd * 0.0158, (0.0044, 0.0044, 0.0016), rubber, rot=mk.basis(d, rd))
+        for e0, e1 in ((a, a + d * ring_w), (b - d * ring_w, b)):                               # clamp rings
+            mk.cyl(part, e0, e1, 0.0170, black, n=36)
+            q = e0.lerp(e1, 0.5) + Z * -0.0168
+            mk.cyl(part, q, q + Z * -0.0022, 0.0021, steel, n=10)
+            mk.cyl(part, q + Z * -0.0022, q + Z * -0.0024, 0.0011, M.get("black_gloss"), n=6)
+        mk.cyl(part, b, b + d * 0.0030, 0.0158, black, r2=0.0150, n=36)                        # end plug
     return part.finish(coll)
 
 
@@ -148,6 +153,12 @@ def build_shifter(coll):
                        pod + X * -0.012 + Z * 0.020 + axis * 0.010],
                  [(0.0030, 0.0060), (0.0028, 0.0060), (0.0028, 0.0055)], None, n=8, power=3.0)
     part.add_bm(mk.subdivided(rel, 1), black)
+    probe = mk._text_mesh("12s", 1.0, 0.0)
+    xs = [v.co.x for v in probe.vertices]
+    bpy.data.meshes.remove(probe)
+    s12 = 0.010 / (max(xs) - min(xs))
+    o12 = pod + X * -0.0262 + Z * 0.002
+    mk.add_text(part, "12s", 1.0, 0.0, M.get("tyre_text"), lambda v: o12 + axis * (v.x * s12) + Z * (v.y * s12))
     # cable adjuster barrel at the front
     adj = pod + X * 0.032 + Z * 0.004
     mk.cyl(part, adj - X * 0.004, adj + X * 0.008, 0.0045, steel, n=16)

@@ -13,7 +13,8 @@ Update this file after every work session.
 
 | Item | Waiting on | Blocks |
 |---|---|---|
-| Toni's scratches + accessories (mudguard, small saddle bag) | Toni: photos when he has access to the bike | Adding them to the model (pass 3 is built stock) |
+| Toni's scratches + accessories (mudguard, small saddle bag, bell, light, Kryptonite chain lock) | Toni: photos when he has access to the bike | Adding them to the model (built stock for now) |
+| Exact WTB grip model + stem length | Toni (grips: black WTB lock-on with clamps both ends; stem: printed on it) | Small details (grips built WTB Wafel-like, stem 75 mm) |
 | Own photos of the bike (with my modifications) | Toni: no access to the bike for a few days. Take photos from the [photo checklist](#photo-checklist) | Model refinement: Toni's modifications + small details (v1 is built from official material) |
 | Checks on the real bike | Toni: [BIKE-SPECS.md → Measure on the real bike](BIKE-SPECS.md#measure-on-the-real-bike-) (fork decal XCR32/X1, stem length, **crank length: Toni thinks 175 mm, to check (stamped inside the arm)**, **fork decal XCR 32 or X1 32 (Toni: don't know yet)**, valve type Presta/Schrader…) | Small details only |
 | Go-ahead for Phase 2 (3D garage in the app) | Toni's OK after reviewing model v1 | Phase 2 |
@@ -80,7 +81,7 @@ Update this file after every work session.
   - ✅ Pass 1 fix (Toni: "tyres not accurate"): tyres rebuilt from 14 downloaded Maxxis/shop photos as the **Tan Wall** version (TB00219800, 60 TPI): tan sidewalls, real tread pattern, real sidewall graphics. Tyre budget raised to 62k each. Total now 427k
   - ✅ Pass 2: drivetrain (chain, cassette, crankset, derailleur, BB). Toni: all stock, 175 mm cranks (to check), chain on 10T. Shapes traced in mm on SCOTT's side photo (asymmetric 96 BCD spider, FC-MT511 arms, KMC X12 + MissingLink, CS-M6100 windows/ramps/spacers, RD-M6100 body/DEORE plate/clutch/cage/guard). Rendered on Toni's "render": fixed folded cog chamfers, RD body shape, guard openings, spindle end. 461k total, 14.5 MB. Viewer republished. Also: tyre REKON RACE font → Rockwell Extra Bold, black band under the knobs; shift housing rerouted into the RD bracket arm. **Rule from Toni: render only when he says so**
   - ✅ Pass 3: frame and fork. Toni: fork decal unknown (keep XCR 32), scratches + mudguard + saddle bag later, **seat clamp is quick-release**. Rendered on "render" and compared with SCOTT's side photo: head tube re-shaped (smooth taper, no crease), one rippled TIG seam down each side of the head tube (snapped onto the welded surface), down-tube flare spread out, fork decals (SR SUNTOUR low + bold grey slashes, XCR 32 left leg), lighter smoothing on the fork lowers (measured 38–43 mm, matches the photo), QR lever on the drive side. Frame 95k, fork 61.5k, total 507k. Viewer republished
-  - 🔲 Pass 4: brakes and cockpit
+  - ✅ Pass 4: brakes and cockpit. Toni: brakes + rotors stock, stem length unknown (keep 75 mm), **grips changed to black WTB lock-on (clamps both ends)**, bell/light/Kryptonite lock later. References: Shimano MT200 / SM-RT10 / SL-M6100 + WTB grip photos, SCOTT 360° frames (front + non-drive side). Rendered on "render" (Toni: budget is a guide, more triangles are fine when needed): BL-MT200 lever (body along the bar, SHIMANO, hinged clamp, short pivot, flat hooked blade), BR-MT200 caliper (rounded halves, big piston boss, SHIMANO, banjo, bleed nipple) with the post-mount adapter moved radially outside (it covered the caliper) and radial bolts, SM-RT10 black 6-arm spider with rivets, WTB waffle grips with 2 clamp rings, 2-bolt stem faceplate, 12s on the shifter. Total 524k. Viewer republished
   - 🔲 Pass 5: saddle, seatpost, pedals (⛔ pedal shape needs Toni's photos)
 - ⛔ Add Toni's modifications + check details against own photos (stem length, crank length, fork decal, grips)
 - 🔲 Polish later: derailleur body shape, optional Draco compression for the app
@@ -165,6 +166,8 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-05 | Pass 4 rendered on Toni's request (lever, calipers, cockpit close-ups): fixed caliper/adapter layout, lever blade and pivot; exported and viewer republished. Toni: triangle budget is a soft guide. |
+| 2026-10-05 | Pass 3 committed (f293c6a). Pass 4 started: questions answered (brakes stock, stem unknown, WTB black lock-on grips, accessories later), references downloaded, brakes/rotors/grips/stem/shifter built without rendering (524k). |
 | 2026-10-05 | Pass 3 rendered on Toni's request, compared with SCOTT's photo (same-scale crops of head tube, fork, seat cluster), fixed head tube shape, weld seam, QR lever; exported (507k) and viewer republished. |
 | 2026-10-05 | Pass 2 committed (0efbe39). Pass 3 started: questions answered, Suntour XCR references downloaded, SCOTT's side photo cropped with mm grids (fork, head tube, dropout, seat cluster); frame/fork/seat-clamp changes built without rendering (512k). |
 | 2026-10-05 | Pass 2 rendered on Toni's request and compared with SCOTT's side photo (same-scale crops): fixes to cassette, derailleur, crank; exported and viewer republished. 461k triangles. |

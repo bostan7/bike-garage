@@ -111,10 +111,14 @@ def render_views(out_dir, views=None):
                             # pass 3 close-ups: head tube joints, fork leg, quick-release seat clamp (left side)
                             ("head_close", tuple(S.on_axis(60) + Vector((0.30, -0.42, 0.12))), (1400, 1000)),
                             ("fork_close", tuple(S.FRONT_AXLE + Vector((0.32, -0.55, 0.30))), (1000, 1200)),
-                            ("seat_close", tuple(S.ST_TOP + Vector((0.20, 0.36, 0.10))), (1400, 1000))):
+                            ("seat_close", tuple(S.ST_TOP + Vector((0.20, 0.36, 0.10))), (1400, 1000)),
+                            # pass 4 close-ups: left lever + grip from above/behind, both calipers from the left side
+                            ("lever_close", tuple(Vector((0.30, 0.48, 1.16))), (1400, 1000)),
+                            ("caliper_front", tuple(S.FRONT_AXLE + Vector((-0.16, 0.42, 0.14))), (1400, 1000)),
+                            ("caliper_rear", tuple(S.REAR_AXLE + Vector((0.20, 0.42, 0.16))), (1400, 1000))):
         lens = {"cockpit": 50, "drivetrain": 50, "wheel_close": 50, "tyre_close": 50, "tread_front": 135,
                 "tyre_logo": 60, "cassette_side": 120, "crank_side": 110, "head_close": 60, "fork_close": 55,
-                "seat_close": 70}.get(name, 70)
+                "seat_close": 70, "lever_close": 55, "caliper_front": 60, "caliper_rear": 60}.get(name, 70)
         cam = _camera(scene, "cam_" + name, loc, (0, 0, 0), lens=lens)
         target = {"cockpit": (0.52, 0.0, 1.02), "drivetrain": (-0.2, 0.0, 0.33),
                   "wheel_close": tuple(S.FRONT_AXLE), "tyre_close": (S.FRONT_AXLE.x + 0.30, -0.02, S.FRONT_AXLE.z + 0.17),
@@ -123,7 +127,9 @@ def render_views(out_dir, views=None):
                   "cassette_side": (S.REAR_AXLE.x - 0.01, 0.0, S.REAR_AXLE.z - 0.07),
                   "crank_side": (S.BB.x + 0.06, 0.0, S.BB.z),
                   "head_close": tuple(S.on_axis(60)), "fork_close": tuple(S.FRONT_AXLE + Vector((0.0, 0.0, 0.17))),
-                  "seat_close": tuple(S.ST_TOP)}.get(name, centre)
+                  "seat_close": tuple(S.ST_TOP), "lever_close": (0.53, 0.25, 0.99),
+                  "caliper_front": tuple(S.FRONT_AXLE + Vector((-0.07, 0.05, 0.035))),
+                  "caliper_rear": tuple(S.REAR_AXLE + Vector((0.065, 0.05, 0.04)))}.get(name, centre)
         _look_at(cam, target)
         all_views[name] = (cam, size)
 

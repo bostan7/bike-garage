@@ -42,6 +42,7 @@ What each part looks like and its key measurements (for the 3D model), plus usef
 
 ### `grips` — Syncros (neon yellow)
 - ✅ (photo) Neon-yellow grips with the Syncros logo on the end. Model not listed in the spec 🔍.
+- ✅ **Toni's bike (modification):** replaced with **black WTB lock-on grips, clamp ring at both ends** (exact model 🔍, Toni will tell).
 
 ### `shifter` — Shimano Deore SL-M6100-R
 - ✅ Right-hand 12-speed Rapidfire Plus trigger, band clamp, cable. Shift cable and housing run inside the frame.
