@@ -143,6 +143,8 @@ To add: `Upgrade` (wishlist item: part slot, name, price, link, stat deltas), pa
 
 **Update (Toni, 2026-10-05, after the first phone test): the app must look like a game garage (Forza / GTA / NFS), not a normal app.** Decisions: NFS neon look + GTA LS Customs camera (every menu choice flies the camera to that area of the bike) · **landscape only** · no Material bottom bar; service log, workshop tools, bike settings and part details are **panels over the 3D garage** · extras: menu sounds (mutable), vibration, a Forza-style condition badge (class + number), an intro (garage lights switch on, camera sweep).
 
+**Update (Toni, 2026-10-10): game controls + design first.** The temporary right-side menu goes away. Navigation = **modes you swipe between** (`SERVICE LOG · GARAGE · PARTS · WORKSHOP · BIKE`, Garage = home in the middle): **swipe from the left/right screen edge** (or tap the ◀ ▶ / tabs in the bottom mode bar) changes mode, the turntable turns and the panel slides in with sound + vibration. **Drag on the bike = rotate**, pinch = zoom, double-tap = reset, tap a part = camera fly-to + card, back = close card / go up a level, **hold-to-confirm** for important actions. The UI is designed first as a **clickable prototype** (not Figma: the Starter plan only allows a few Figma actions per month): `design/prototype/` → (local page). Once Toni approves it, steps 6–8 and 11 are built to match it.
+
 | Step | What | Done when |
 |---|---|---|
 | 1 | ✅ Phone model: Draco `bike.glb` (2.27 MB, 23 parts) | done |

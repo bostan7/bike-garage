@@ -4,8 +4,8 @@ Update this file after every work session.
 
 **Legend:** ✅ done · 🔲 to do · 🚧 in progress · ⛔ blocked (see the *Blocked* section for why)
 
-**Last updated:** 2026-10-05
-**Current phase:** Phase 1 done (model v3, 525k triangles, commits 56f805c..92cdd7f). Phase 2 (3D garage in the app): questions answered, plan written (PLAN.md 5b), waiting for Toni's OK to build
+**Last updated:** 2026-10-11
+**Current phase:** Phase 2 (3D garage in the app): garage + game UI built and running on the Pixel; phone test done and fixed; next: performance check, then remove the old 2D routes
 
 ---
 
@@ -18,7 +18,6 @@ Update this file after every work session.
 | Saddle + pedal models | Toni's photos (saddle: bigger and softer than the Belcarra; pedals: silver two-sided trekking) | Exact shapes (built as a generic comfort saddle and Wellgo B087-like pedals) |
 | Own photos of the bike (with my modifications) | Toni: no access to the bike for a few days. Take photos from the [photo checklist](#photo-checklist) | Model refinement: Toni's modifications + small details (v1 is built from official material) |
 | Checks on the real bike | Toni: [BIKE-SPECS.md → Measure on the real bike](BIKE-SPECS.md#measure-on-the-real-bike-) (fork decal XCR32/X1, stem length, **crank length: Toni thinks 175 mm, to check (stamped inside the arm)**, **fork decal XCR 32 or X1 32 (Toni: don't know yet)**, valve type Presta/Schrader…) | Small details only |
-| Go-ahead to build Phase 2 (3D garage in the app) | Toni's OK on the Phase 2 plan ([PLAN.md → 5b](PLAN.md)) | Phase 2 build |
 
 ---
 
@@ -94,16 +93,19 @@ Update this file after every work session.
 - ✅ 3D engine: **plain Google Filament 1.75.1** instead of SceneView (SceneView 4.x and Filament ≥ 1.76 need Kotlin 2.4; ours is 2.2.20; fewer dependencies). Garage IBL made on the phone from the CC0 `parking_garage` HDR (1k, 1.6 MB). `garage/GarageRenderer.kt` + `Garage3D.kt`; home route shows the 3D garage. `assembleDebug` OK
 - ✅ First phone test (Pixel 9 Pro, Mali-G715, GLES 3.2): bike renders, drag/pinch work, cold start ~0.7 s. Fixed a native crash on leaving the screen (ModelViewer frees itself on detach; our objects now go first)
 - ✅ **Design change (Toni): game garage UI** (NFS look + GTA camera), **landscape**, panels over the garage, no bottom bar; extras: sounds, vibration, condition badge, intro. Plan updated (PLAN.md 5b, 12 steps), CLAUDE.md conventions updated
-- 🔲 Step 3: landscape + full-screen, remove the bottom bar
-- 🔲 Step 4: dark NFS garage scene (exposure, spotlights, glossy floor, turntable neon ring, bloom)
-- 🔲 Step 5: intro (lights on, camera sweep)
-- 🔲 Step 6–8: game HUD + condition badge, NFS main menu (fonts, sounds, vibration), PARTS as LS Customs (camera fly-to)
-- 🔲 Garage environment: dark studio, spotlights, reflective floor, turntable
-- 🔲 Load `bike.glb`, slow turntable spin
-- 🔲 Camera: orbit (drag), zoom (pinch), reset (double-tap)
-- 🔲 Tap a part in 3D to select it
-- 🔲 Condition glow: colour each part green / amber / red
+- ✅ Step 3: landscape (sensorLandscape) + immersive full-screen, Material bottom bar removed; temporary text menu on the right (PARTS (2D) · SERVICE LOG · WORKSHOP · BIKE) keeps the old pages reachable until step 7. Installed on the Pixel, opens sideways, no crash. Still to check: old pages in landscape + Back (phone locked during the test)
+- ✅ **Design change (Toni, 2026-10-10): game controls.** Swipe modes from the screen edges (`SERVICE LOG · GARAGE · PARTS · WORKSHOP · BIKE`), drag = rotate, tap part = fly-to, hold-to-confirm. Design first as a clickable prototype (`design/prototype/`, (local page)) instead of Figma (Starter plan limits)
+- ✅ Toni tested prototype v2: "way better, more NFS than GTA", must look like a garage → approved direction
+- ✅ Garage environment in Blender: `3d/blender/build_garage.py` + `garagelib/` → `3d/models/garage.glb` and Draco `assets/garage.glb` (0.30 MB, ~31k tris): wet concrete floor, block walls, roll-up shutter, workbench/props, turntable + neon ring, neon strips, hex LED ceiling, SCALE 980 sign
+- ✅ Step 4–5: Filament garage scene (`garage/GarageScene.kt`, `GarageTuning.kt`, `GarageController.kt`): spotlights + VSM shadow, IBL, SSR floor, bloom, fog, vignette, turntable, idle spin, intro (lights on one by one + camera sweep), mode camera presets, area/part fly-to, camera shift beside panels
+- ✅ Step 6–8: game UI (`ui/game/`): nameplate + odometer, condition badge, alerts/status/sound chips, edge-swipe modes `SERVICE LOG · GARAGE · PARTS · WORKSHOP · BIKE`, panels per mode, part card with hold-to-confirm, speed-stripe wipe, banners, sounds (`res/raw`), vibration, OFL fonts (`res/font`)
+- ✅ Load `bike.glb` on the turntable; drag = orbit, pinch = zoom, double tap = reset
+- ✅ Tap a part in 3D to select it (Filament pick → PARTS + card; checked on the phone: tap on the frame opened the Frame card)
+- ✅ Condition glow per part (status view) and selection pulse
+- ✅ Phone test 1 (2026-10-10/11) found: lime haze on the turntable, bike too low (wheels over the mode tabs), selected part painted solid lime, part-card stats hidden under the buttons, nameplate subtitle showing through the menu header, edge swipe could trigger Android's back gesture
+- ✅ Fixes checked on the phone with screenshots: rim light 5200→2400 cd, aimed higher with a narrower cone (no lime pool on the turntable), front fill 2600→3800 cd, bloom 0.2→0.12; camera target 0.6→0.47 m and a bit further back (menu modes 2.9–3.0 m so the bike fits beside the panel); selection glow ~¼; card header scrolls with the stats; subtitle fades with the odometer; back-gesture exclusion on the middle 46 % of both edges (mode swipe only starts there)
 - 🔲 Check performance on the Pixel 9 Pro (60–120 fps)
+- 🔲 Old 2D routes (`parts`, `timeline`, `tools`, `garage`, `part/{id}`) are no longer reachable from the home screen; remove them once nothing is missing from the game UI
 
 ## Phase 3 — NFS-style UI
 
@@ -175,6 +177,10 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-11 | Phase 2 built (with Toni's OK, workers tracked in savvy-progress): garage glb, Filament garage engine, NFS game UI, integrated in `BikeApp`, installed on the Pixel. Phone test: intro, HUD, edge swipe, areas, part tap → card all work. Fixed lighting haze, framing (also beside the menus), glow strength, card layout, subtitle overlap, back-gesture conflict; re-checked on the phone with screenshots. |
+| 2026-10-10 | Prototype v2 (Toni: "way better, more NFS than GTA, must look like a garage"): real garage built in 3D (wet reflective concrete floor, block walls, roll-up shutter, pegboard, workbench, tool chest, tyre stack, hexagon LED ceiling, neon strips + SCALE 980 sign, light cone, dust) and NFS-style UI (italic menu lists with neon slab, segmented stat bars, speed-stripe wipe, banners, control prompts). |
+| 2026-10-10 | Game controls decided (edge-swipe modes, drag = rotate). Clickable prototype v1 built with the real 3D bike and published for testing on the phone. |
+| 2026-10-05 | Step 3 built + installed: landscape, full-screen, no bottom bar, temporary side menu. Page/Back test still to do (phone locked). Next: step 4 dark garage. |
 | 2026-10-05 | First phone test OK after fixing a detach crash. Toni: the app must look like a game garage (NFS + GTA camera), landscape, panels over the garage, sounds/vibration/badge/intro. Plan and CLAUDE.md updated. |
 | 2026-10-05 | Phase 2 build started (Toni's OK): Draco phone model, Filament 1.75.1 (plan change from SceneView, Kotlin compatibility), garage HDR lighting, 3D garage as home; debug APK builds. Phone install blocked: adb unauthorized. |
 | 2026-10-05 | Pass 5 committed (92cdd7f), model v3 complete. Phase 2 started with questions: all 8 answered; Phase 2 plan written in PLAN.md (section 5b). No code yet. |

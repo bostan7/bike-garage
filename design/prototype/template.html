@@ -1,0 +1,856 @@
+<title>Scale 980 Garage Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600;1,700;1,800;1,900&family=Barlow:wght@400;500;600&family=Chakra+Petch:wght@500;600&display=swap">
+<style>
+/* Layout: a landscape NFS-style garage screen. The 3D garage fills it; nameplate + condition in the top corners,
+   mode tabs and control prompts at the bottom; mode menus fade in from the left over the scene, the part
+   card from the right. Single dark theme on purpose (a game garage at night). */
+:root {
+  color-scheme: dark;
+  --bg: #050608;
+  --fade: rgba(4, 5, 7, 0.88);
+  --line: rgba(220, 235, 255, 0.12);
+  --fg: #f2f4f6;
+  --muted: #8e98a4;
+  --neon: #d2f500;          /* the bike's neon yellow (SCOTT logo, stock grips) */
+  --neon-dim: rgba(210, 245, 0, 0.18);
+  --ink: #0a0b0d;           /* text on neon */
+  --ok: #3ad98b; --soon: #ffb020; --over: #ff4d4f;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Barlow", "Segoe UI", Roboto, sans-serif;
+  --font-num: "Chakra Petch", "Barlow Condensed", ui-monospace, monospace;
+  --left-w: min(38vw, 360px);
+  --right-w: min(32vw, 310px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); overflow: hidden;
+       user-select: none; -webkit-user-select: none; }
+#game { position: fixed; inset: 0; }
+#game canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--neon); outline-offset: 2px; }
+.it { font-family: var(--font-display); font-style: italic; font-weight: 800; text-transform: uppercase; }
+
+/* ---------- HUD ---------- */
+.hud { position: fixed; pointer-events: none; transition: opacity .5s, transform .5s; z-index: 5; }
+.hud > * { pointer-events: auto; }
+body.intro .hud, body.intro .modebar, body.intro .edge, body.intro .prompts { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+.hud-tl { top: calc(10px + env(safe-area-inset-top, 0px)); left: calc(16px + env(safe-area-inset-left, 0px)); }
+.hud-tr { top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(16px + env(safe-area-inset-right, 0px));
+          display: flex; gap: 10px; align-items: flex-start; }
+.nameplate { line-height: .86; }
+.nameplate .brand { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .4em; color: var(--neon); }
+.nameplate .model { font-size: 36px; letter-spacing: .01em; }
+.nameplate .sub { font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: .2em; color: var(--muted); margin-top: 5px; }
+.odo { margin-top: 6px; font-family: var(--font-num); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+.odo b { font-size: 20px; color: var(--fg); font-weight: 600; }
+.badge { display: grid; grid-template-columns: auto auto; align-items: stretch; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+         background: rgba(10, 12, 15, .82); }
+.badge .cls { font-size: 30px; padding: 0 14px 0 16px; color: var(--ink); background: var(--neon); display: grid; place-items: center; }
+.badge .num { font-family: var(--font-num); font-size: 22px; font-weight: 600; padding: 2px 16px 0 10px; display: grid; align-content: center; }
+.badge .num small { font-family: var(--font-display); font-size: 10px; letter-spacing: .24em; color: var(--muted); font-weight: 600; }
+.chipbtn { font-family: var(--font-display); font-weight: 700; font-style: italic; font-size: 14px; letter-spacing: .08em; padding: 8px 16px;
+           background: rgba(10, 12, 15, .82); clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+           display: flex; gap: 6px; align-items: center; text-transform: uppercase; }
+.chipbtn[aria-pressed="true"] { background: var(--neon); color: var(--ink); }
+.alerts { color: var(--soon); }
+.alerts .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--over); box-shadow: 0 0 8px var(--over); }
+.example { position: fixed; left: 50%; top: calc(8px + env(safe-area-inset-top, 0px)); transform: translateX(-50%);
+           font-family: var(--font-display); font-size: 10px; letter-spacing: .24em; color: var(--muted);
+           border: 1px dashed var(--line); padding: 2px 8px; pointer-events: none; z-index: 5; }
+
+/* ---------- mode tabs (bottom) + control prompts ---------- */
+.modebar { position: fixed; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+           display: flex; align-items: center; gap: 14px; transition: opacity .5s, transform .5s; z-index: 6; }
+.modebar .arrow { font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--muted); padding: 0 6px; }
+.modebar .arrow:active { color: var(--neon); }
+.tabs { display: flex; gap: 22px; }
+.tab { position: relative; font-size: 17px; color: var(--muted); padding: 4px 2px 6px; transition: color .25s, transform .25s; white-space: nowrap; }
+.tab::after { content: ""; position: absolute; left: -4px; right: -4px; bottom: 0; height: 3px; background: var(--neon);
+              transform: scaleX(0) skewX(-20deg); transition: transform .3s cubic-bezier(.2,.8,.2,1); box-shadow: 0 0 12px var(--neon); }
+.tab[aria-selected="true"] { color: var(--fg); transform: scale(1.12); }
+.tab[aria-selected="true"]::after { transform: scaleX(1) skewX(-20deg); }
+.prompts { position: fixed; left: 0; right: 0; bottom: 0; padding: 4px 16px calc(5px + env(safe-area-inset-bottom, 0px));
+           display: flex; justify-content: center; gap: 22px; font-family: var(--font-display); font-weight: 600; font-size: 11px;
+           letter-spacing: .14em; color: var(--muted); background: linear-gradient(0deg, rgba(0,0,0,.65), transparent);
+           pointer-events: none; z-index: 5; transition: opacity .5s; }
+.prompts span b { display: inline-grid; place-items: center; min-width: 18px; height: 16px; margin-right: 6px; padding: 0 4px;
+                  border: 1px solid var(--muted); border-radius: 3px; color: var(--fg); font-size: 10px; }
+
+/* ---------- edge swipe zones ---------- */
+.edge { position: fixed; top: 24%; bottom: 24%; width: 20px; display: grid; place-items: center; pointer-events: none;
+        color: var(--neon); opacity: .3; font-size: 18px; transition: opacity .3s; z-index: 4; font-weight: 800; }
+.edge.l { left: 0; background: linear-gradient(90deg, var(--neon-dim), transparent); }
+.edge.r { right: 0; background: linear-gradient(270deg, var(--neon-dim), transparent); }
+.edge.flash { opacity: 1; }
+
+/* ---------- speed-stripe wipe on mode change ---------- */
+.wipe { position: fixed; inset: 0; pointer-events: none; z-index: 8; overflow: hidden; }
+.wipe i { position: absolute; top: -20%; height: 140%; width: 18vw; background: var(--neon); opacity: 0; transform: skewX(-24deg); }
+.wipe.go i { animation: wipe .42s cubic-bezier(.3,.7,.2,1) forwards; }
+.wipe i:nth-child(2) { width: 5vw; background: #fff; animation-delay: .04s !important; }
+.wipe i:nth-child(3) { width: 2vw; animation-delay: .08s !important; }
+.wipe.rev i { animation-name: wiperev; }
+@keyframes wipe { 0% { left: -30vw; opacity: .55; } 100% { left: 115vw; opacity: 0; } }
+@keyframes wiperev { 0% { left: 115vw; opacity: .55; } 100% { left: -30vw; opacity: 0; } }
+
+/* ---------- NFS menus (left) and part card (right) ---------- */
+.panel { position: fixed; top: calc(74px + env(safe-area-inset-top, 0px)); bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+         display: flex; flex-direction: column; transition: transform .45s cubic-bezier(.2,.8,.2,1), opacity .35s; opacity: 0;
+         pointer-events: none; z-index: 4; }
+.panel.left { left: 0; width: var(--left-w); padding-left: calc(16px + env(safe-area-inset-left, 0px)); transform: translateX(-40px);
+              background: linear-gradient(90deg, var(--fade) 0%, var(--fade) 72%, transparent 100%); }
+.panel.right { right: 0; width: var(--right-w); padding-right: calc(16px + env(safe-area-inset-right, 0px)); transform: translateX(40px);
+               background: linear-gradient(270deg, var(--fade) 0%, var(--fade) 78%, transparent 100%); padding-left: 26px; }
+.panel.open { transform: none; opacity: 1; pointer-events: auto; }
+.panel header { padding: 4px 30px 8px 0; display: grid; gap: 2px; }
+.panel h2 { margin: 0; font-size: 30px; line-height: .95; letter-spacing: .01em; text-wrap: balance; }
+.panel h2::before { content: ""; display: inline-block; width: 8px; height: .78em; background: var(--neon); transform: skewX(-20deg); margin-right: 10px; }
+.panel .crumb { font-family: var(--font-display); font-weight: 600; font-size: 11px; letter-spacing: .22em; color: var(--muted); }
+.panel .body { overflow-y: auto; padding: 4px 34px 10px 0; display: grid; gap: 2px; align-content: start; flex: 1; min-height: 0; }
+.panel .back { justify-self: start; font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: .16em; color: var(--muted); }
+.item { position: relative; display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; padding: 7px 10px 7px 6px;
+        text-align: left; width: 100%; transition: color .2s; }
+.item::before { content: ""; position: absolute; inset: 0; background: var(--neon); transform: skewX(-14deg) scaleX(0); transform-origin: left;
+                transition: transform .25s cubic-bezier(.2,.8,.2,1); z-index: -1; }
+.item[aria-current="true"] { color: var(--ink); }
+.item[aria-current="true"]::before { transform: skewX(-14deg) scaleX(1); }
+.item[aria-current="true"] .s, .item[aria-current="true"] .ix { color: rgba(10,11,13,.7); }
+.item .ix { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
+.item .t { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 20px; text-transform: uppercase; line-height: 1; }
+.item .s { font-size: 12px; color: var(--muted); line-height: 1.25; margin-top: 2px; }
+.item .dots { display: flex; gap: 3px; }
+.sdot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.sdot.ok { background: var(--ok); } .sdot.soon { background: var(--soon); box-shadow: 0 0 8px var(--soon); }
+.sdot.over { background: var(--over); box-shadow: 0 0 8px var(--over); } .sdot.none { background: #4a525c; }
+
+.card-h { padding: 4px 0 6px; }
+.card-h .cat-l { font-family: var(--font-display); font-weight: 600; font-size: 11px; letter-spacing: .22em; color: var(--neon); }
+.card-h h3 { margin: 2px 0 0; font-size: 28px; line-height: .95; }
+.card-h .m { font-weight: 600; font-size: 14px; margin-top: 3px; }
+.card-h .spec { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.stat { display: grid; gap: 3px; margin-top: 6px; }
+.stat .lbl { display: flex; justify-content: space-between; font-family: var(--font-display); font-weight: 700; font-style: italic;
+             font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+.stat .lbl span:last-child { font-family: var(--font-num); font-style: normal; font-weight: 600; }
+.segs { display: grid; grid-template-columns: repeat(20, 1fr); gap: 2px; height: 9px; }
+.segs i { background: rgba(255,255,255,.09); transform: skewX(-20deg); transition: background .2s; }
+.statusline { font-size: 16px; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13px; margin: 8px 0 0; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; }
+.actions { display: grid; gap: 5px; padding: 8px 30px 4px 0; }
+.panel.right .actions { padding-right: 0; }
+.act { position: relative; overflow: hidden; padding: 8px 14px 8px 16px; text-align: left; background: rgba(255,255,255,.06);
+       clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); font-family: var(--font-display); font-style: italic;
+       font-weight: 800; font-size: 16px; letter-spacing: .04em; text-transform: uppercase; }
+.act small { display: block; font-family: var(--font-body); font-style: normal; font-weight: 400; letter-spacing: 0; font-size: 11px;
+             color: var(--muted); text-transform: none; }
+.act .hold { position: absolute; inset: 0; width: 0; background: var(--neon); opacity: .35; pointer-events: none; }
+.act.primary { background: var(--neon-dim); color: var(--neon); }
+
+.list-note { font-size: 12px; color: var(--muted); padding: 6px 6px 2px; }
+.tl { display: grid; grid-template-columns: 12px 1fr auto; gap: 10px; padding: 7px 6px; align-items: start; }
+.tl .t { font-family: var(--font-display); font-style: italic; font-weight: 700; font-size: 17px; text-transform: uppercase; line-height: 1.05; }
+.tl .s { font-size: 12px; color: var(--muted); }
+.tl .d { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
+.check { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: center; padding: 7px 6px; text-align: left; width: 100%;
+         font-family: var(--font-display); font-style: italic; font-weight: 700; font-size: 17px; text-transform: uppercase; }
+.check .box { width: 16px; height: 16px; border: 2px solid var(--muted); transform: skewX(-14deg); }
+.check[aria-checked="true"] .box { background: var(--neon); border-color: var(--neon); box-shadow: 0 0 10px var(--neon-dim); }
+.check[aria-checked="true"] { color: var(--muted); }
+.big { font-family: var(--font-num); font-size: 36px; font-weight: 600; line-height: 1; }
+input[type=range] { width: 100%; accent-color: var(--neon); }
+
+/* banner, intro, rotate prompt */
+.banner { position: fixed; left: 0; top: 34%; transform: translateX(-105%); background: var(--neon); color: var(--ink);
+          padding: 10px 46px 10px calc(22px + env(safe-area-inset-left, 0px)); clip-path: polygon(0 0, 100% 0, calc(100% - 28px) 100%, 0 100%);
+          font-size: 22px; letter-spacing: .02em; transition: transform .35s cubic-bezier(.2,.8,.2,1); pointer-events: none; z-index: 9; }
+.banner small { display: block; font-family: var(--font-display); font-style: normal; font-weight: 700; font-size: 11px; letter-spacing: .22em; opacity: .7; }
+.banner.show { transform: none; }
+.intro-title { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; transition: opacity .8s; z-index: 7; }
+.intro-title div { text-align: center; }
+.intro-title .a { font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: .7em; color: var(--neon); }
+.intro-title .b { font-size: clamp(46px, 9vw, 86px); line-height: .9; }
+.intro-title .c { font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: .32em; color: var(--muted); margin-top: 12px; }
+body:not(.intro) .intro-title { opacity: 0; }
+.loading { position: fixed; inset: 0; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700;
+           letter-spacing: .3em; color: var(--muted); z-index: 10; }
+.rotate { position: fixed; inset: 0; background: var(--bg); display: none; place-items: center; text-align: center;
+          padding: 24px; z-index: 50; font-family: var(--font-display); font-weight: 700; letter-spacing: .12em; }
+.rotate .ph { width: 54px; height: 90px; border: 3px solid var(--neon); border-radius: 10px; margin: 0 auto 16px;
+              animation: turn 2s infinite ease-in-out; }
+@keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+@media (orientation: portrait) { .rotate { display: grid; } }
+@media (prefers-reduced-motion: reduce) { .panel, .tab, .item::before, .banner { transition: none; } .wipe { display: none; } .rotate .ph { animation: none; } }
+</style>
+
+<div id="game"></div>
+<div class="loading" id="loading">OPENING THE GARAGE…</div>
+<div class="wipe" id="wipe" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<div class="intro-title" aria-hidden="true"><div>
+  <div class="a">SCOTT</div><div class="b it">SCALE 980</div><div class="c">TAP TO SKIP</div>
+</div></div>
+
+<div class="example">PROTOTYPE · EXAMPLE DATA</div>
+
+<div class="hud hud-tl">
+  <div class="nameplate">
+    <div class="brand">SCOTT</div>
+    <div class="model it">SCALE 980</div>
+    <div class="sub">DARK GREY · SIZE L · MY2022</div>
+  </div>
+  <div class="odo">ODO <b id="odo">1 850</b> KM</div>
+</div>
+
+<div class="hud hud-tr">
+  <button class="chipbtn alerts" id="alertsBtn" type="button"><span class="dot"></span><span id="alertsTxt">ALERTS</span></button>
+  <button class="chipbtn" id="statusBtn" type="button" aria-pressed="false">STATUS</button>
+  <button class="chipbtn" id="soundBtn" type="button" aria-pressed="true">SOUND</button>
+  <div class="badge" title="Bike condition">
+    <div class="cls it" id="badgeCls">A</div><div class="num"><span id="badgeNum">0</span><small>CONDITION</small></div>
+  </div>
+</div>
+
+<div class="edge l" aria-hidden="true">‹</div>
+<div class="edge r" aria-hidden="true">›</div>
+
+<nav class="modebar" aria-label="Modes">
+  <button class="arrow" id="prevBtn" type="button" aria-label="Previous mode">‹</button>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <button class="arrow" id="nextBtn" type="button" aria-label="Next mode">›</button>
+</nav>
+<div class="prompts" aria-hidden="true">
+  <span><b>◀▶</b>EDGE SWIPE · MODE</span><span><b>⟳</b>DRAG · ROTATE</span><span><b>●</b>TAP · SELECT</span>
+  <span><b>●●</b>DOUBLE TAP · RESET</span><span><b>▬</b>HOLD · CONFIRM</span>
+</div>
+
+<section class="panel left" id="p-log" aria-label="Service log">
+  <header><h2 class="it">Service log</h2><span class="crumb">EXAMPLE ENTRIES</span></header>
+  <div class="body" id="logBody"></div>
+  <div class="actions">
+    <button class="act primary" type="button" data-hold="Ride logged" data-sub="+24 km"><span class="hold"></span>Log a ride<small>Hold to confirm · 24 km</small></button>
+  </div>
+</section>
+
+<section class="panel left" id="p-parts" aria-label="Parts">
+  <header><button class="back" id="partsBack" type="button" hidden>‹ ALL AREAS</button>
+    <h2 class="it" id="partsTitle">Parts</h2><span class="crumb" id="partsCrumb">6 AREAS · 23 PARTS</span></header>
+  <div class="body" id="partsBody"></div>
+</section>
+
+<section class="panel left" id="p-workshop" aria-label="Workshop">
+  <header><h2 class="it">Workshop</h2><span class="crumb">PRE-RIDE CHECK · TYRE PRESSURE</span></header>
+  <div class="body" id="workshopBody"></div>
+</section>
+
+<section class="panel left" id="p-bike" aria-label="Bike">
+  <header><h2 class="it">Bike</h2><span class="crumb">INFO · RIDES · BACKUP</span></header>
+  <div class="body" id="bikeBody"></div>
+</section>
+
+<section class="panel right" id="card" aria-label="Part details">
+  <div class="card-h">
+    <div class="cat-l" id="cCat"></div>
+    <h3 class="it" id="cName"></h3>
+    <div class="m" id="cModel"></div>
+    <div class="spec" id="cSpec"></div>
+  </div>
+  <div class="body" id="cBody" style="padding-right:0"></div>
+  <div class="actions">
+    <button class="act primary" type="button" data-hold="Service logged"><span class="hold"></span>Log service<small>Hold to confirm</small></button>
+    <button class="act" type="button" id="issueBtn">Report issue<small>Opens the issue form in the app</small></button>
+    <button class="act" type="button" data-hold="Replacement started"><span class="hold"></span>Replace part<small>Hold to confirm</small></button>
+  </div>
+</section>
+
+<div class="banner it" id="banner"><small id="bannerSub">GARAGE</small><span id="bannerTxt"></span></div>
+<div class="rotate"><div><div class="ph"></div>TURN YOUR PHONE SIDEWAYS<br><span style="color:var(--muted);font-size:12px">The garage is a landscape game screen</span></div></div>
+
+<script id="parts" type="application/json">__PARTS_JSON__</script>
+<script id="glb" type="application/octet-stream">__GLB_BASE64__</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/objects/Reflector.js"></script>
+<script>
+(function () {
+'use strict';
+const PARTS = JSON.parse(document.getElementById('parts').textContent);
+const AREAS = ["Wheels & tyres", "Drivetrain", "Brakes", "Cockpit", "Frame & fork", "Saddle & seatpost"];
+const MODES = [
+  { id: 'log', name: 'Service log', panel: 'p-log', yaw: -0.85, dist: 2.7 },
+  { id: 'garage', name: 'Garage', panel: null, yaw: 0.55, dist: 2.45 },
+  { id: 'parts', name: 'Parts', panel: 'p-parts', yaw: 0.0, dist: 2.35 },
+  { id: 'workshop', name: 'Workshop', panel: 'p-workshop', yaw: 1.35, dist: 2.6 },
+  { id: 'bike', name: 'Bike', panel: 'p-bike', yaw: 2.6, dist: 2.6 },
+];
+// Example condition data (the app computes this from the service history)
+const EXAMPLE = {
+  chain: { h: 'soon', next: 'Service in 60 km', p: 0.82, km: 640, note: 'Check wear (0.5 %)' },
+  tire_rear: { h: 'soon', next: 'Inspect in 120 km', p: 0.85, km: 410, note: 'Centre knobs wearing' },
+  brake_rear: { h: 'over', next: 'Pads overdue by 40 km', p: 1.08, km: 1850, note: 'Open issue: squeals when wet', issue: true },
+  derailleur: { h: 'ok', next: 'Service in 310 km', p: 0.38, km: 1850 },
+};
+const status = s => EXAMPLE[s] || { h: 'ok', next: 'Service in ' + (200 + (s.length * 37) % 600) + ' km', p: 0.2 + (s.length % 5) / 10, km: 1850 };
+const LOG = [
+  ['2026-10-04', 'Ride · 32 km', 'Forest loop', 'ok'], ['2026-10-02', 'Chain cleaned & lubed', 'Chain · me', 'ok'],
+  ['2026-09-28', 'Rear brake squeals', 'Issue · open', 'over'], ['2026-09-27', 'Ride · 41 km', '', 'ok'],
+  ['2026-09-20', 'New tyres', 'Rekon Race 2.35 Tan Wall', 'ok'], ['2026-09-14', 'Inspection', 'Fork · OK', 'ok'],
+];
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = id => document.getElementById(id);
+
+// ------------------------------------------------------------------ sound + vibration
+let soundOn = true, actx = null;
+function ctx() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return actx; }
+function tone(freq, dur, type, vol, slide) {
+  if (!soundOn) return; const a = ctx(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain(); o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, a.currentTime);
+  if (slide) o.frequency.exponentialRampToValueAtTime(slide, a.currentTime + dur);
+  g.gain.setValueAtTime(vol || 0.06, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
+  o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + dur);
+}
+function whoosh() {
+  if (!soundOn) return; const a = ctx(); if (!a) return;
+  const len = Math.floor(a.sampleRate * 0.35), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  s.buffer = buf; f.type = 'bandpass'; f.frequency.setValueAtTime(400, a.currentTime);
+  f.frequency.exponentialRampToValueAtTime(2400, a.currentTime + 0.3); g.gain.value = 0.12;
+  s.connect(f).connect(g).connect(a.destination); s.start();
+}
+function buzz(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
+const tick = () => { tone(1500, 0.05, 'square', 0.025); buzz(8); };
+const confirmSnd = () => { tone(660, 0.12, 'triangle', 0.07); setTimeout(() => tone(990, 0.18, 'triangle', 0.07), 90); buzz([20, 40, 30]); };
+
+// ------------------------------------------------------------------ canvas textures for the garage
+function canvasTex(w, h, draw, repeat) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+  return t;
+}
+function noise(g, w, h, base, spread, n) {
+  g.fillStyle = base; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < n; i++) { const v = Math.random() * spread; g.fillStyle = `rgba(${v},${v},${v},${Math.random() * 0.08})`;
+    g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 3, 1 + Math.random() * 3); }
+}
+const concreteTex = canvasTex(1024, 1024, (g, w, h) => {
+  noise(g, w, h, '#2a2d31', 255, 26000);
+  for (let i = 0; i < 18; i++) { const r = 40 + Math.random() * 160; const x = Math.random() * w, y = Math.random() * h;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(0,0,0,0.20)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+  g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = 3; g.strokeRect(0, 0, w, h);
+}, [6, 6]);
+const blockTex = canvasTex(512, 512, (g, w, h) => {
+  noise(g, w, h, '#24272b', 255, 9000);
+  g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = 4;
+  for (let y = 0; y <= h; y += 64) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
+    for (let x = ((y / 64) % 2) * 64; x <= w; x += 128) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 64); g.stroke(); } }
+}, [5, 2]);
+const shutterTex = canvasTex(512, 512, (g, w, h) => {
+  for (let y = 0; y < h; y += 16) { const gr = g.createLinearGradient(0, y, 0, y + 16);
+    gr.addColorStop(0, '#3a3f45'); gr.addColorStop(0.55, '#24282c'); gr.addColorStop(1, '#14171a'); g.fillStyle = gr; g.fillRect(0, y, w, 16); }
+}, [1, 3]);
+const pegTex = canvasTex(1024, 512, (g, w, h) => {
+  g.fillStyle = '#1b1e22'; g.fillRect(0, 0, w, h); g.fillStyle = '#0c0d0f';
+  for (let y = 12; y < h; y += 24) for (let x = 12; x < w; x += 24) { g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); }
+  g.strokeStyle = '#8b939c'; g.lineCap = 'round';
+  const tool = (x, y, l, wdt) => { g.lineWidth = wdt; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + l); g.stroke();
+    g.beginPath(); g.arc(x, y, wdt * 1.4, 0, 7); g.stroke(); };
+  for (let i = 0; i < 14; i++) tool(60 + i * 66, 60 + (i % 3) * 20, 120 + (i % 4) * 30, 6 + (i % 3) * 2);
+  g.strokeStyle = '#d2f500'; g.lineWidth = 8; for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(160 + i * 220, 380, 46, 0, 7); g.stroke(); }
+});
+const signTex = canvasTex(1024, 256, (g, w, h) => {
+  g.clearRect(0, 0, w, h); g.font = 'italic 900 150px "Barlow Condensed", Arial Narrow, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.shadowColor = '#d2f500'; g.shadowBlur = 40; g.fillStyle = '#eaff7a'; g.fillText('SCALE 980', w / 2, h / 2 + 6);
+  g.shadowBlur = 12; g.fillStyle = '#ffffff'; g.fillText('SCALE 980', w / 2, h / 2 + 6);
+});
+const stripeTex = canvasTex(256, 32, (g, w, h) => {
+  g.fillStyle = '#111'; g.fillRect(0, 0, w, h); g.fillStyle = '#d9b400';
+  for (let x = -h; x < w + h; x += 40) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 20, 0); g.lineTo(x + 20 - h, h); g.lineTo(x - h, h); g.fill(); }
+}, [1, 1]);
+const coneTex = canvasTex(64, 256, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,255,255,0.0)'); gr.addColorStop(0.15, 'rgba(255,255,255,0.35)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+
+// ------------------------------------------------------------------ three.js garage
+const game = $('game');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+game.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050608);
+scene.fog = new THREE.Fog(0x050608, 6.5, 14);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(34, 2, 0.05, 40);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.enablePan = false; controls.minDistance = 0.45; controls.maxDistance = 3.2;
+controls.maxPolarAngle = Math.PI * 0.52; controls.rotateSpeed = 0.7;
+
+const ROOM = { w: 9.0, d: 9.0, h: 3.6, back: -3.4 };
+const basic = (c, o) => new THREE.MeshBasicMaterial(Object.assign({ color: c }, o || {}));
+const std = o => new THREE.MeshStandardMaterial(o);
+function box(w, h, d, mat, x, y, z, parent) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z);
+  m.castShadow = m.receiveShadow = true; (parent || scene).add(m); return m; }
+
+// wet concrete floor: a real mirror under a semi-transparent concrete layer
+const mirror = new THREE.Reflector(new THREE.PlaneGeometry(ROOM.w, ROOM.d), {
+  textureWidth: Math.floor(innerWidth * 0.6), textureHeight: Math.floor(innerHeight * 0.6), color: 0x8a8f96 });
+mirror.rotation.x = -Math.PI / 2; mirror.position.set(0, -0.001, ROOM.back + ROOM.d / 2); scene.add(mirror);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w, ROOM.d), std({ map: concreteTex, roughness: 0.55, metalness: 0.0,
+  transparent: true, opacity: 0.86 }));
+floor.rotation.x = -Math.PI / 2; floor.position.copy(mirror.position); floor.position.y = 0.0005; floor.receiveShadow = true; scene.add(floor);
+// safety stripes around the turntable bay
+const bay = 2.9;
+[[0, -bay / 2, bay, 0], [0, bay / 2, bay, 0], [-bay / 2, 0, bay, Math.PI / 2], [bay / 2, 0, bay, Math.PI / 2]].forEach(([x, z, l, r]) => {
+  const t = stripeTex.clone(); t.needsUpdate = true; t.wrapS = THREE.RepeatWrapping; t.repeat.set(l / 0.4, 1);
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(l, 0.09), basic(0xffffff, { map: t, transparent: true, opacity: 0.85 }));
+  s.rotation.x = -Math.PI / 2; s.rotation.z = r; s.position.set(0.133 + x, 0.002, z); scene.add(s);
+});
+
+// walls: concrete blocks; roll-up shutter on the back wall; pegboard wall on the left
+const wallMat = std({ map: blockTex, roughness: 0.9 });
+const backWall = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w, ROOM.h), wallMat); backWall.position.set(0, ROOM.h / 2, ROOM.back); backWall.receiveShadow = true; scene.add(backWall);
+const leftW = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.d, ROOM.h), wallMat); leftW.rotation.y = Math.PI / 2; leftW.position.set(-ROOM.w / 2, ROOM.h / 2, ROOM.back + ROOM.d / 2); scene.add(leftW);
+const rightW = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.d, ROOM.h), wallMat); rightW.rotation.y = -Math.PI / 2; rightW.position.set(ROOM.w / 2, ROOM.h / 2, ROOM.back + ROOM.d / 2); scene.add(rightW);
+const ceil = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w, ROOM.d), std({ color: 0x0c0d10, roughness: 1 })); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, ROOM.h, ROOM.back + ROOM.d / 2); scene.add(ceil);
+const shutter = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.7), std({ map: shutterTex, roughness: 0.45, metalness: 0.75 }));
+shutter.position.set(0.3, 1.35, ROOM.back + 0.02); scene.add(shutter);
+box(3.6, 0.22, 0.12, std({ color: 0x16191d, metalness: 0.6, roughness: 0.4 }), 0.3, 2.78, ROOM.back + 0.06);   // shutter box
+box(0.08, 2.8, 0.1, std({ color: 0x16191d, metalness: 0.6, roughness: 0.4 }), -1.45, 1.4, ROOM.back + 0.05);
+box(0.08, 2.8, 0.1, std({ color: 0x16191d, metalness: 0.6, roughness: 0.4 }), 2.05, 1.4, ROOM.back + 0.05);
+const peg = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6), std({ map: pegTex, roughness: 0.7 }));
+peg.rotation.y = Math.PI / 2; peg.position.set(-ROOM.w / 2 + 0.02, 1.75, -1.2); scene.add(peg);
+// workbench + tool chest on the left, tyre stack and drum on the right
+const dark = std({ color: 0x15181c, roughness: 0.5, metalness: 0.5 });
+box(0.7, 0.06, 2.6, std({ color: 0x3b2a1c, roughness: 0.8 }), -ROOM.w / 2 + 0.4, 0.92, -1.2);
+box(0.62, 0.86, 2.5, dark, -ROOM.w / 2 + 0.38, 0.45, -1.2);
+const chest = box(0.55, 1.1, 0.9, std({ color: 0x1c2026, roughness: 0.35, metalness: 0.7 }), -ROOM.w / 2 + 0.35, 0.55, 0.9);
+for (let i = 0; i < 6; i++) box(0.02, 0.012, 0.6, basic(0xd2f500), -ROOM.w / 2 + 0.63, 0.18 + i * 0.16, 0.9);   // drawer handles glow
+const tyreMat = std({ color: 0x0e0f10, roughness: 0.85 });
+for (let i = 0; i < 5; i++) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.06, 12, 40), tyreMat);
+  t.rotation.x = Math.PI / 2; t.position.set(ROOM.w / 2 - 0.7, 0.07 + i * 0.125, -2.4); t.castShadow = true; scene.add(t); }
+const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 0.88, 32), std({ color: 0x1b2836, roughness: 0.5, metalness: 0.6 }));
+drum.position.set(ROOM.w / 2 - 0.6, 0.44, -1.4); drum.castShadow = true; scene.add(drum);
+
+// neon: SCALE 980 sign on the back wall, wall strips, hexagon LED ceiling
+const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.6), basic(0xffffff, { map: signTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+sign.position.set(-2.55, 2.55, ROOM.back + 0.03); scene.add(sign);
+const neonY = basic(0xd2f500), neonW = basic(0xe8f2ff);
+box(ROOM.w, 0.025, 0.025, neonY, 0, 0.05, ROOM.back + 0.03);                 // floor-line strip on the back wall
+box(0.025, ROOM.h, 0.025, neonY, -ROOM.w / 2 + 0.03, ROOM.h / 2, ROOM.back + 0.03);
+box(0.025, ROOM.h, 0.025, neonY, ROOM.w / 2 - 0.03, ROOM.h / 2, ROOM.back + 0.03);
+const hexGroup = new THREE.Group(); hexGroup.position.set(0.133, ROOM.h - 0.04, 0); scene.add(hexGroup);
+(function hexCeiling() {
+  const r = 0.42, rows = 4, cols = 5, tubeGeo = new THREE.BoxGeometry(r, 0.03, 0.03);
+  for (let q = -cols; q <= cols; q++) for (let s = -rows; s <= rows; s++) {
+    const cx = q * r * 1.5, cz = (s + (q % 2 ? 0.5 : 0)) * r * Math.sqrt(3);
+    if (Math.hypot(cx, cz) > 2.1) continue;
+    for (let k = 0; k < 6; k++) {
+      const a = Math.PI / 3 * k, b = Math.PI / 3 * (k + 1);
+      const x1 = cx + r * Math.cos(a), z1 = cz + r * Math.sin(a), x2 = cx + r * Math.cos(b), z2 = cz + r * Math.sin(b);
+      const m = new THREE.Mesh(tubeGeo, neonW); m.position.set((x1 + x2) / 2, 0, (z1 + z2) / 2);
+      m.rotation.y = -Math.atan2(z2 - z1, x2 - x1); hexGroup.add(m);
+    }
+  }
+})();
+// light cones from the ceiling + drifting dust
+const coneMat = basic(0xdff0ff, { map: coneTex, transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 1.3, ROOM.h - 0.1, 48, 1, true), coneMat);
+cone.position.set(0.133, (ROOM.h - 0.1) / 2, 0); scene.add(cone);
+const dustGeo = new THREE.BufferGeometry(); const dustN = 350, dp = new Float32Array(dustN * 3);
+for (let i = 0; i < dustN; i++) { const a = Math.random() * 6.28, rr = Math.random() * 1.6;
+  dp[i * 3] = 0.133 + Math.cos(a) * rr; dp[i * 3 + 1] = Math.random() * ROOM.h; dp[i * 3 + 2] = Math.sin(a) * rr; }
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dp, 3));
+const dustMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.012, transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending });
+const dust = new THREE.Points(dustGeo, dustMat); scene.add(dust);
+
+// turntable with neon ring
+const turnBase = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.04, 0.035, 96), std({ color: 0x15191f, roughness: 0.3, metalness: 0.8 }));
+turnBase.position.set(0.133, 0.0175, 0); turnBase.receiveShadow = true; scene.add(turnBase);
+const ringMat = basic(0x111111);
+const ring = new THREE.Mesh(new THREE.TorusGeometry(1.03, 0.007, 8, 160), ringMat);
+ring.rotation.x = Math.PI / 2; ring.position.set(0.133, 0.036, 0); scene.add(ring);
+const glowMat = basic(0xd2f500, { transparent: true, opacity: 0.0, depthWrite: false });
+const glow = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.4, 96), glowMat);
+glow.rotation.x = -Math.PI / 2; glow.position.set(0.133, 0.003, 0); scene.add(glow);
+
+// lights (switched on one by one in the intro)
+const hemi = new THREE.HemisphereLight(0xbfd4ff, 0x080a0c, 0.0); scene.add(hemi);
+function spot(color, x, y, z, angle, tx, ty, tz) {
+  const s = new THREE.SpotLight(color, 0, 16, angle, 0.5, 1.1);
+  s.position.set(x, y, z); s.target.position.set(tx ?? 0.13, ty ?? 0.5, tz ?? 0); scene.add(s, s.target); return s;
+}
+const key = spot(0xffffff, 0.15, 3.5, 0.3, 0.62); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0003;
+const front = spot(0xe8f0ff, 1.8, 2.6, 3.2, 0.5);
+const rim = spot(0xd2f500, -2.6, 2.4, -2.4, 0.6);
+const wall = spot(0x9fb8ff, 0.3, 3.4, -1.5, 1.0, 0.3, 0.8, ROOM.back);
+const LIGHTS = [[hemi, 0.3, null], [key, 30, null], [front, 16, null], [rim, 14, null], [wall, 10, null]];
+const NEON = [neonY, neonW];
+
+const turn = new THREE.Group(); turn.position.set(0.133, 0.036, 0); scene.add(turn);
+const meshesBySlot = {};
+let modelReady = false;
+
+function b64ToBuffer(b64) { const bin = atob(b64.trim()); const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out.buffer; }
+const draco = new THREE.DRACOLoader(); draco.setDecoderPath('./'); draco.setDecoderConfig({ type: 'js' });
+const loader = new THREE.GLTFLoader(); loader.setDRACOLoader(draco);
+loader.parse(b64ToBuffer($('glb').textContent), '', gltf => {
+  const root = gltf.scene; root.position.x = -0.133;
+  root.traverse(o => {
+    if (!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    o.material = Array.isArray(o.material) ? o.material.map(m => m.clone()) : o.material.clone();
+    let n = o; while (n && !PARTS[n.name]) n = n.parent;
+    if (!n) return;
+    o.userData.slot = n.name;
+    (meshesBySlot[n.name] = meshesBySlot[n.name] || []).push(o);
+  });
+  turn.add(root);
+  modelReady = true; $('loading').hidden = true;
+  renderParts(); startIntro();
+}, err => { $('loading').textContent = 'The model could not be loaded: ' + (err && err.message || err); });
+
+// ------------------------------------------------------------------ highlight + status glow
+const COLORS = { ok: 0x3ad98b, soon: 0xffb020, over: 0xff4d4f, sel: 0xd2f500 };
+let statusView = false, selected = null, pulse = 0;
+const mats = o => Array.isArray(o.material) ? o.material : [o.material];
+function paint() {
+  Object.entries(meshesBySlot).forEach(([slot, list]) => {
+    const st = status(slot).h;
+    list.forEach(o => mats(o).forEach(m => {
+      if (!m.emissive) return;
+      if (slot === selected) { m.emissive.setHex(COLORS.sel); m.emissiveIntensity = 0.28 + 0.16 * Math.sin(pulse); }
+      else if (statusView) { m.emissive.setHex(COLORS[st] || 0); m.emissiveIntensity = st === 'ok' ? 0.16 : 0.5; }
+      else { m.emissive.setHex(0x000000); }
+    }));
+  });
+}
+
+// ------------------------------------------------------------------ camera moves
+let tween = null;
+const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+function flyTo(pos, target, yaw, ms) {
+  const from = { pos: camera.position.clone(), target: controls.target.clone(), yaw: turn.rotation.y };
+  let dy = yaw - from.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+  tween = { t0: performance.now(), ms: reduced ? 1 : (ms || 900), from, pos, target, yaw: from.yaw + dy };
+}
+function modeView(m) {
+  return { pos: new THREE.Vector3(0.13 + Math.sin(0.35) * m.dist, 1.0, Math.cos(0.35) * m.dist), tgt: new THREE.Vector3(0.13, 0.6, 0) };
+}
+function boxView(slots, k, minD) {
+  const box3 = new THREE.Box3(); const saved = turn.rotation.y; turn.rotation.y = 0; turn.updateMatrixWorld(true);
+  slots.forEach(s => (meshesBySlot[s] || []).forEach(o => box3.expandByObject(o)));
+  turn.rotation.y = saved; turn.updateMatrixWorld(true);
+  const c = box3.getCenter(new THREE.Vector3()), size = box3.getSize(new THREE.Vector3()).length();
+  const d = Math.max(minD, size * k);
+  return { pos: c.clone().add(new THREE.Vector3(0.28, 0.32, 1).normalize().multiplyScalar(d)), tgt: c };
+}
+const areaView = a => boxView(Object.keys(PARTS).filter(s => PARTS[s].category === a), 1.25, 0.55);
+const partView = s => boxView([s], 1.4, 0.42);
+
+let viewShift = 0, viewShiftTarget = 0;
+function updateShift() {
+  const W = innerWidth;
+  const l = document.querySelector('.panel.left.open') ? Math.min(W * 0.38, 360) * 0.8 : 0;
+  const r = $('card').classList.contains('open') ? Math.min(W * 0.32, 310) * 0.85 : 0;
+  viewShiftTarget = (r - l) / 2;
+}
+
+// ------------------------------------------------------------------ modes
+let modeIndex = 1, idleSince = performance.now(), area = null;
+const tabs = $('tabs');
+MODES.forEach((m, i) => {
+  const b = document.createElement('button');
+  b.className = 'tab it'; b.type = 'button'; b.setAttribute('role', 'tab'); b.id = 'tab-' + m.id; b.textContent = m.name;
+  b.addEventListener('click', () => setMode(i));
+  tabs.appendChild(b);
+});
+function showMode(i) {
+  document.querySelectorAll('.tab').forEach((t, k) => t.setAttribute('aria-selected', String(k === i)));
+  document.querySelectorAll('.panel.left').forEach(p => p.classList.toggle('open', p.id === MODES[i].panel));
+}
+function wipe(dir) {
+  if (reduced) return; const w = $('wipe'); w.classList.remove('go', 'rev'); void w.offsetWidth;
+  w.classList.add('go'); if (dir < 0) w.classList.add('rev');
+}
+function setMode(i, quiet) {
+  const target = (i + MODES.length) % MODES.length;
+  const dir = i - modeIndex;
+  const changed = target !== modeIndex; modeIndex = target;
+  const m = MODES[target];
+  showMode(target);
+  if (m.id !== 'parts' || changed) { closeCard(); selected = null; area = null; renderParts(); }
+  updateShift();
+  const v = modeView(m);
+  flyTo(v.pos, v.tgt, m.yaw);
+  if (changed && !quiet) { whoosh(); buzz(15); wipe(dir); }
+  idleSince = performance.now();
+}
+$('prevBtn').addEventListener('click', () => setMode(modeIndex - 1));
+$('nextBtn').addEventListener('click', () => setMode(modeIndex + 1));
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') setMode(modeIndex - 1);
+  if (e.key === 'ArrowRight') setMode(modeIndex + 1);
+  if (e.key === 'Escape') back();
+});
+
+// ------------------------------------------------------------------ PARTS
+function itemBtn(ix, title, sub, right, current) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'item'; b.setAttribute('aria-current', String(!!current));
+  const i = document.createElement('span'); i.className = 'ix'; i.textContent = String(ix).padStart(2, '0');
+  const mid = document.createElement('span'); const t = document.createElement('div'); t.className = 't'; t.textContent = title; mid.appendChild(t);
+  if (sub) { const s = document.createElement('div'); s.className = 's'; s.textContent = sub; mid.appendChild(s); }
+  b.append(i, mid, right || document.createElement('span')); return b;
+}
+function renderParts() {
+  const body = $('partsBody'); body.innerHTML = '';
+  $('partsBack').hidden = !area;
+  if (!area) {
+    $('partsTitle').textContent = 'Parts'; $('partsCrumb').textContent = '6 AREAS · 23 PARTS';
+    AREAS.forEach((a, k) => {
+      const list = Object.keys(PARTS).filter(s => PARTS[s].category === a);
+      const dots = document.createElement('span'); dots.className = 'dots';
+      list.forEach(s => { const d = document.createElement('span'); d.className = 'sdot ' + status(s).h; dots.appendChild(d); });
+      const b = itemBtn(k + 1, a, list.length + ' parts', dots, false);
+      b.addEventListener('click', () => openArea(a));
+      body.appendChild(b);
+    });
+    const n = document.createElement('div'); n.className = 'list-note';
+    n.textContent = 'Pick an area, or tap a part on the bike.'; body.appendChild(n);
+    return;
+  }
+  $('partsTitle').textContent = area;
+  const list = Object.keys(PARTS).filter(s => PARTS[s].category === area);
+  $('partsCrumb').textContent = list.length + ' PARTS';
+  list.forEach((slot, k) => {
+    const p = PARTS[slot], st = status(slot);
+    const dot = document.createElement('span'); dot.className = 'sdot ' + st.h;
+    const b = itemBtn(k + 1, p.name, p.brand + ' ' + p.model, dot, slot === selected);
+    b.addEventListener('click', () => selectPart(slot));
+    body.appendChild(b);
+  });
+}
+function openArea(a) {
+  area = a; selected = null; closeCard(); renderParts(); tick();
+  const v = areaView(a); flyTo(v.pos, v.tgt, 0); idleSince = performance.now();
+}
+$('partsBack').addEventListener('click', back);
+function selectPart(slot) {
+  const p = PARTS[slot];
+  if (MODES[modeIndex].id !== 'parts') { const d = 2 - modeIndex; modeIndex = 2; showMode(2); whoosh(); wipe(d); }
+  area = p.category; selected = slot; renderParts(); openCard(slot); tick();
+  const v = partView(slot); flyTo(v.pos, v.tgt, 0); idleSince = performance.now();
+}
+function segs(value, color) {
+  const n = Math.round(Math.max(0, Math.min(1, value)) * 20);
+  return '<div class="segs">' + Array.from({ length: 20 }, (_, i) => '<i style="' + (i < n ? 'background:' + color : '') + '"></i>').join('') + '</div>';
+}
+function openCard(slot) {
+  const p = PARTS[slot], st = status(slot);
+  $('cCat').textContent = p.category.toUpperCase();
+  $('cName').textContent = p.name; $('cModel').textContent = p.brand + ' ' + p.model; $('cSpec').textContent = p.spec;
+  const col = { ok: 'var(--ok)', soon: 'var(--soon)', over: 'var(--over)' }[st.h] || 'var(--muted)';
+  const word = { ok: 'Good', soon: 'Service soon', over: 'Needs attention' }[st.h] || 'Not tracked';
+  const cond = Math.max(0, 1 - Math.max(0, st.p - 0.2) * 0.9);
+  $('cBody').innerHTML =
+    '<div class="statusline it"><span class="sdot ' + st.h + '"></span><span style="color:' + col + '">' + word + '</span></div>' +
+    '<div class="stat"><div class="lbl"><span>Condition</span><span>' + Math.round(cond * 100) + '</span></div>' + segs(cond, col) + '</div>' +
+    '<div class="stat"><div class="lbl"><span>Wear since service</span><span>' + Math.round(st.p * 100) + '%</span></div>' + segs(st.p, col) + '</div>' +
+    '<div class="stat"><div class="lbl"><span>Distance on part</span><span>' + st.km + ' km</span></div>' + segs(st.km / 3000, 'var(--fg)') + '</div>' +
+    '<dl class="kv"><dt>Next</dt><dd></dd><dt>Note</dt><dd></dd></dl>';
+  const dds = $('cBody').querySelectorAll('dd');
+  dds[0].textContent = st.next; dds[1].textContent = st.note || '—';
+  $('card').classList.add('open'); updateShift();
+}
+function closeCard() { $('card').classList.remove('open'); updateShift(); }
+function back() {
+  if ($('card').classList.contains('open')) { selected = null; closeCard(); renderParts();
+    if (area) { const v = areaView(area); flyTo(v.pos, v.tgt, 0); } tick(); return; }
+  if (area) { area = null; renderParts(); const m = MODES[modeIndex]; const v = modeView(m); flyTo(v.pos, v.tgt, m.yaw); tick(); return; }
+  if (MODES[modeIndex].id !== 'garage') setMode(1);
+}
+$('issueBtn').addEventListener('click', () => banner('Issue form', 'OPENS IN THE APP'));
+
+// ------------------------------------------------------------------ other panels (example content)
+(function fillPanels() {
+  const lb = $('logBody');
+  LOG.forEach(([d, t, s, h]) => {
+    const r = document.createElement('div'); r.className = 'tl';
+    r.innerHTML = '<span class="sdot ' + h + '" style="margin-top:5px"></span><span><div class="t"></div><div class="s"></div></span><span class="d"></span>';
+    r.querySelector('.t').textContent = t; r.querySelector('.s').textContent = s; r.querySelector('.d').textContent = d.slice(5).replace('-', '.');
+    lb.appendChild(r);
+  });
+  const wb = $('workshopBody');
+  const items = ['Tyre pressure', 'Brakes firm', 'QR levers closed', 'No headset knock', 'Chain lubed', 'Bolts tight', 'Lockout open'];
+  items.forEach(t => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'check'; b.setAttribute('aria-checked', 'false');
+    b.setAttribute('role', 'checkbox');
+    const bx = document.createElement('span'); bx.className = 'box'; const lbl = document.createElement('span'); lbl.textContent = t;
+    b.append(bx, lbl);
+    b.addEventListener('click', () => { const on = b.getAttribute('aria-checked') !== 'true'; b.setAttribute('aria-checked', String(on)); tick();
+      if ([...wb.querySelectorAll('.check')].every(c => c.getAttribute('aria-checked') === 'true')) { confirmSnd(); banner('Ready to ride', 'PRE-RIDE CHECK COMPLETE'); } });
+    wb.appendChild(b);
+  });
+  const tp = document.createElement('div'); tp.style.cssText = 'padding:10px 6px;display:grid;gap:6px';
+  tp.innerHTML = '<div class="list-note" style="padding:0">TYRE PRESSURE · rider + kit <b id="kg">80</b> kg</div><input type="range" id="kgRange" min="50" max="120" value="80" aria-label="Rider weight">' +
+    '<div style="display:flex;gap:22px"><div><div class="list-note" style="padding:0">FRONT</div><div class="big" id="pf"></div></div><div><div class="list-note" style="padding:0">REAR</div><div class="big" id="pr"></div></div><div style="align-self:end" class="list-note">psi · inner tubes</div></div>';
+  wb.appendChild(tp);
+  const upd = () => { const kg = +$('kgRange').value; $('kg').textContent = kg; const f = Math.round(8 + 0.23 * kg); $('pf').textContent = f; $('pr').textContent = f + 2; };
+  $('kgRange').addEventListener('input', upd); upd();
+  const bb = $('bikeBody');
+  bb.innerHTML = '<dl class="kv" style="padding:4px 6px 8px"><dt>Model</dt><dd>SCOTT Scale 980 (art. 280483)</dd><dt>Size / colour</dt><dd>L · Dark Grey</dd>' +
+    '<dt>Odometer</dt><dd>1 850 km (example)</dd><dt>Rider</dt><dd>181 cm · saddle 742 mm</dd></dl>';
+  [['Log a ride', 'Ride logged', '+24 km'], ['Export backup', 'Backup saved', 'BIKE.JSON'], ['Import backup', 'Backup imported', 'RESTORED']].forEach(([l, msg, sub], i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'act' + (i === 0 ? ' primary' : '');
+    b.dataset.hold = msg; b.dataset.sub = sub; b.innerHTML = '<span class="hold"></span>' + l + '<small>Hold to confirm</small>'; bb.appendChild(b);
+  });
+})();
+
+// ------------------------------------------------------------------ hold-to-confirm buttons
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('[data-hold]'); if (!b) return;
+  const bar = b.querySelector('.hold'); const t0 = performance.now(); let done = false; let holding = true;
+  tone(300, 0.6, 'sawtooth', 0.02, 900);
+  const step = () => {
+    if (done || !holding) return; const k = Math.min(1, (performance.now() - t0) / 800);
+    bar.style.width = (k * 100) + '%';
+    if (k >= 1) { done = true; confirmSnd(); banner(b.dataset.hold, (b.dataset.sub || 'PROTOTYPE') + ' · NOT SAVED'); setTimeout(() => bar.style.width = '0', 250); return; }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  const stop = () => { holding = false; if (!done) bar.style.width = '0'; removeEventListener('pointerup', stop); removeEventListener('pointercancel', stop); };
+  addEventListener('pointerup', stop); addEventListener('pointercancel', stop);
+});
+
+let bannerTimer = null;
+function banner(msg, sub) { $('bannerTxt').textContent = msg; $('bannerSub').textContent = sub || ''; $('banner').classList.add('show');
+  clearTimeout(bannerTimer); bannerTimer = setTimeout(() => $('banner').classList.remove('show'), 1900); }
+
+// ------------------------------------------------------------------ HUD buttons
+$('statusBtn').addEventListener('click', () => { statusView = !statusView; $('statusBtn').setAttribute('aria-pressed', String(statusView)); tick();
+  banner(statusView ? 'Status view' : 'Status view off', statusView ? 'PARTS GLOW BY CONDITION' : 'GARAGE'); });
+$('soundBtn').addEventListener('click', () => { soundOn = !soundOn; $('soundBtn').setAttribute('aria-pressed', String(soundOn)); if (soundOn) tick(); });
+$('alertsBtn').addEventListener('click', () => selectPart('brake_rear'));
+(function badge() {
+  let score = 1000; Object.keys(PARTS).forEach(s => { const st = status(s); score -= st.h === 'soon' ? 40 : st.h === 'over' ? 110 : 0; if (st.issue) score -= 15; });
+  const cls = score >= 900 ? 'S' : score >= 800 ? 'A' : score >= 700 ? 'B' : score >= 600 ? 'C' : 'D';
+  $('badgeCls').textContent = cls; $('badgeNum').textContent = score;
+  const n = Object.keys(PARTS).filter(s => status(s).h !== 'ok').length; $('alertsTxt').textContent = n + ' ALERTS';
+})();
+
+// ------------------------------------------------------------------ gestures: edge swipe vs drag vs tap
+const EDGE = () => Math.max(40, innerWidth * 0.09);
+let gesture = null, lastTap = 0;
+renderer.domElement.addEventListener('pointerdown', e => {
+  ctx();
+  const x = e.clientX, onEdge = x < EDGE() || x > innerWidth - EDGE();
+  gesture = { x, y: e.clientY, t: performance.now(), edge: onEdge };
+  if (onEdge) { controls.enabled = false; document.querySelector(x < innerWidth / 2 ? '.edge.l' : '.edge.r').classList.add('flash'); }
+  idleSince = performance.now();
+}, true);
+addEventListener('pointerup', e => {
+  if (!gesture) return;
+  const dx = e.clientX - gesture.x, dy = e.clientY - gesture.y, dt = performance.now() - gesture.t;
+  document.querySelectorAll('.edge').forEach(el => el.classList.remove('flash'));
+  if (gesture.edge) {
+    controls.enabled = true;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) setMode(modeIndex + (dx < 0 ? 1 : -1));
+    gesture = null; return;
+  }
+  if (Math.hypot(dx, dy) < 8 && dt < 350 && e.target === renderer.domElement) {
+    const now = performance.now();
+    if (now - lastTap < 300) { lastTap = 0; selected = null; closeCard(); area = null; renderParts(); setMode(modeIndex, true); }
+    else { lastTap = now; pick(e.clientX, e.clientY); }
+  }
+  gesture = null; idleSince = performance.now();
+});
+controls.addEventListener('start', () => { tween = null; idleSince = performance.now(); });
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+function pick(x, y) {
+  if (document.body.classList.contains('intro')) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  ptr.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  const hit = ray.intersectObjects(Object.values(meshesBySlot).flat(), false)[0];
+  if (hit) selectPart(hit.object.userData.slot);
+}
+
+// ------------------------------------------------------------------ intro: garage lights switch on, camera sweep
+let introStart = 0;
+function setNeon(k) { NEON.forEach(m => m.color.setScalar(0).lerp(m === neonY ? new THREE.Color(0xd2f500) : new THREE.Color(0xe8f2ff), k));
+  sign.material.opacity = k; }
+function startIntro() {
+  document.body.classList.add('intro');
+  LIGHTS.forEach(l => { l[0].intensity = 0; l[2] = false; }); setNeon(0); coneMat.opacity = 0; dustMat.opacity = 0;
+  controls.target.set(0.13, 0.55, 0);
+  introStart = performance.now();
+  if (reduced) endIntro();
+}
+function endIntro() {
+  if (!document.body.classList.contains('intro')) return;
+  document.body.classList.remove('intro');
+  LIGHTS.forEach(([l, v]) => l.intensity = v); setNeon(1); ringMat.color.setHex(0xd2f500); glowMat.opacity = 0.07;
+  coneMat.opacity = 0.14; dustMat.opacity = 0.55; hexGroup.visible = true;
+  setMode(1, true);
+}
+addEventListener('pointerdown', () => { if (document.body.classList.contains('intro') && performance.now() - introStart > 300) endIntro(); });
+function introFrame(now) {
+  const t = (now - introStart) / 1000;
+  // ceiling hex lights flicker on first, then the spots one by one, then the neon
+  hexGroup.visible = t > 0.5 && !(t > 0.62 && t < 0.72) && !(t > 0.85 && t < 0.9);
+  LIGHTS.forEach((l, i) => { const k = Math.min(1, Math.max(0, (t - 0.9 - i * 0.45) / 0.12)); l[0].intensity = l[1] * k;
+    if (k > 0 && !l[2]) { l[2] = true; tone(80 + i * 10, 0.28, 'square', 0.05); buzz(25); } });
+  setNeon(Math.min(1, Math.max(0, (t - 3.0) / 0.4)));
+  coneMat.opacity = 0.14 * Math.min(1, Math.max(0, (t - 1.3) / 0.5)); dustMat.opacity = 0.55 * Math.min(1, Math.max(0, (t - 1.5) / 1));
+  if (t > 3.1) { ringMat.color.setHex(0xd2f500); glowMat.opacity = 0.07; }
+  const a = Math.min(1, t / 4.6), e = ease(a), ang = -1.9 + e * 2.25, d = 3.4 - e * 0.95;
+  camera.position.set(0.13 + Math.sin(ang) * d, 0.45 + e * 0.55, Math.cos(ang) * d);
+  if (t > 4.8) endIntro();
+}
+
+// ------------------------------------------------------------------ loop
+function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  mirror.getRenderTarget().setSize(Math.floor(innerWidth * 0.6), Math.floor(innerHeight * 0.6)); updateShift(); }
+addEventListener('resize', resize); resize();
+let last = performance.now();
+renderer.setAnimationLoop(now => {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!modelReady) return;
+  if (document.body.classList.contains('intro')) introFrame(now);
+  else if (tween) {
+    const k = Math.min(1, (now - tween.t0) / tween.ms), e = ease(k);
+    camera.position.lerpVectors(tween.from.pos, tween.pos, e);
+    controls.target.lerpVectors(tween.from.target, tween.target, e);
+    turn.rotation.y = tween.from.yaw + (tween.yaw - tween.from.yaw) * e;
+    if (k >= 1) tween = null;
+  } else if (MODES[modeIndex].id === 'garage' && !selected && now - idleSince > 6000) {
+    turn.rotation.y += dt * 0.18;                       // turntable spins when idle
+  }
+  const pos = dust.geometry.attributes.position;             // dust drifts slowly upwards
+  for (let i = 0; i < dustN; i++) { let y = pos.getY(i) + dt * 0.03; if (y > ROOM.h) y = 0; pos.setY(i, y); }
+  pos.needsUpdate = true;
+  viewShift += (viewShiftTarget - viewShift) * Math.min(1, dt * 8);
+  camera.setViewOffset(innerWidth, innerHeight, -viewShift, 0, innerWidth, innerHeight);
+  pulse += dt * 4; paint();
+  controls.update();
+  renderer.render(scene, camera);
+});
+})();
+</script>
