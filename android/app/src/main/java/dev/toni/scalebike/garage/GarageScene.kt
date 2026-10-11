@@ -49,7 +49,7 @@ import kotlin.math.sqrt
 
 /**
  * The 3D night garage on plain Filament: engine, swap chain (UiHelper), Choreographer frame loop,
- * gltfio loading of `bike.glb` + `garage.glb` (both Draco), spot lights + low IBL, bloom / SSAO / SSR / VSM
+ * gltfio loading of `bike.glb` + `garage.glb` (both Draco), spot lights + low IBL, bloom / SSAO / SSR / PCF
  * shadows / fog / ACES, an orbit camera with fly-to tweens, turntable, picking, part glow and the intro.
  *
  * Everything runs on the main thread. Files are read on a background thread; Filament calls stay on main.
@@ -160,6 +160,7 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
     private var lastInteractionNs = 0L
     private var idleSinceNs = System.nanoTime()
     private var appliedRateHint = -1f
+    private var lastMovingNs = 0L
 
     private var mode = GarageMode.GARAGE
     private var selected: String? = null
@@ -350,7 +351,7 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
         view.colorGrading = colorGrading
         view.antiAliasing = View.AntiAliasing.FXAA
         view.multiSampleAntiAliasingOptions = view.multiSampleAntiAliasingOptions.apply {
-            enabled = true; sampleCount = T.MSAA_SAMPLES
+            enabled = T.MSAA_SAMPLES > 1; sampleCount = T.MSAA_SAMPLES
         }
         view.ambientOcclusionOptions = view.ambientOcclusionOptions.apply {
             enabled = true; radius = T.SSAO_RADIUS; intensity = T.SSAO_INTENSITY
@@ -387,8 +388,8 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
             enabled = true; minScale = T.DYNAMIC_RES_MIN; maxScale = 1f; homogeneousScaling = true
             quality = View.QualityLevel.MEDIUM
         }
-        view.setShadowType(View.ShadowType.VSM)
-        view.vsmShadowOptions = view.vsmShadowOptions.apply { lightBleedReduction = 0.15f }
+        // PCF, not VSM: on the Mali-G715 VSM (+ its blur) was one of the three biggest costs (phone test 2026-10-11)
+        view.setShadowType(View.ShadowType.PCF)
     }
 
     private fun setupLights() {
@@ -421,7 +422,6 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
         if (shadows) {
             builder.shadowOptions(LightManager.ShadowOptions().apply {
                 mapSize = T.SHADOW_MAP_SIZE
-                blurWidth = T.VSM_BLUR
             })
         }
         builder.build(engine, e)
@@ -1063,15 +1063,22 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
 
         val rate = if (loaded) update(frameTimeNanos, dt) else RATE_STATIC
         updateRateHint(rate)
+        // When nothing moves, keep drawing for a short settle time (dynamic resolution climbs back to full
+        // sharpness, reflections catch up), then stop: the last image stays on screen at zero GPU cost.
+        if (rate != RATE_STATIC) lastMovingNs = frameTimeNanos
+        val settling = frameTimeNanos - lastMovingNs < T.SETTLE_NS
+        if (!dirty && rate == RATE_STATIC && !settling) return
         val interval = when (rate) {
             RATE_ACTIVE -> 0L
-            RATE_IDLE -> T.IDLE_FRAME_NS
-            else -> T.STATIC_FRAME_NS
+            else -> T.IDLE_FRAME_NS
         }
         if (!dirty && frameTimeNanos - lastRenderNs < interval) return
         val sc = swapChain ?: return
         if (!uiHelper.isReadyToRender) return
         if (renderer.beginFrame(sc, frameTimeNanos)) {
+            // slow idle animation: show each frame at a fixed time after its vsync, so the 30 fps frames are evenly
+            // spaced (without it some were shown one refresh late: 25 / 42 ms judder)
+            if (rate == RATE_IDLE) renderer.setPresentationTime(frameTimeNanos + T.IDLE_PRESENT_DELAY_NS)
             renderer.render(view)
             renderer.endFrame()
             lastRenderNs = frameTimeNanos
@@ -1111,9 +1118,15 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
         return rate
     }
 
-    /** Lets the panel drop to 60 Hz while nothing is being touched or flown (120 Hz LTPO on the Pixel). */
+    /** Frame-rate vote for the 3D surface (120 Hz LTPO panel on the Pixel). */
     private fun updateRateHint(rate: Int) {
-        val hint = if (rate == RATE_ACTIVE) 0f else 60f
+        // 120 Hz while the bike moves under the finger (0 = "no preference" left the panel at 60), 30 Hz for the
+        // slow idle animations, no vote when nothing is drawn (the LTPO panel can drop further)
+        val hint = when (rate) {
+            RATE_ACTIVE -> 120f
+            RATE_IDLE -> T.IDLE_HZ
+            else -> 0f
+        }
         if (hint == appliedRateHint) return
         val sc = swapChain ?: return
         appliedRateHint = hint

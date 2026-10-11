@@ -23,12 +23,17 @@ internal object GarageTuning {
     /** The surface is rendered at this fraction of the view size and scaled up by the compositor. */
     const val RENDER_SCALE = 0.8f
     const val DYNAMIC_RES_MIN = 0.6f
-    const val MSAA_SAMPLES = 4
+    /** 1 = MSAA off; FXAA smooths the edges. 4x MSAA cost ~10 ms per frame on the Mali-G715 for little gain. */
+    const val MSAA_SAMPLES = 1
 
-    /** Frames are drawn every vsync while active; at most every IDLE_FRAME_NS when only the turntable /
-     * highlight animate (~60 fps on the 120 Hz panel), and every STATIC_FRAME_NS when nothing moves. */
-    const val IDLE_FRAME_NS = 12_000_000L
-    const val STATIC_FRAME_NS = 100_000_000L
+    /** Frames are drawn every vsync while active (120 Hz); at most every IDLE_FRAME_NS when only the slow turntable
+     * spin / highlight pulse animate (30 fps: looks the same, half the heat); after SETTLE_NS without any change
+     * nothing is drawn at all. */
+    const val IDLE_FRAME_NS = 30_000_000L
+    const val IDLE_HZ = 30f
+    /** Idle frames are presented this long after their vsync (3 refreshes at 120 Hz; the GPU needs ~10 ms). */
+    const val IDLE_PRESENT_DELAY_NS = 25_000_000L
+    const val SETTLE_NS = 1_000_000_000L
     /** How long after the last touch the loop stays at full rate. */
     const val ACTIVE_HOLD_NS = 1_500_000_000L
 
@@ -95,7 +100,6 @@ internal object GarageTuning {
     /** Image-based light from envs/garage.hdr, kept low so the blacks are not flat. */
     const val IBL_INTENSITY = 6f
     const val SHADOW_MAP_SIZE = 1024
-    const val VSM_BLUR = 6f
 
     val SKY = floatArrayOf(0.0016f, 0.0018f, 0.0024f)  // ~#050608 in linear
 
@@ -107,8 +111,9 @@ internal object GarageTuning {
     const val SSAO_INTENSITY = 1.0f
     const val SSR_THICKNESS = 0.1f
     const val SSR_BIAS = 0.01f
-    const val SSR_MAX_DISTANCE = 3.0f
-    const val SSR_STRIDE = 2.0f
+    // floor reflections were the biggest cost (28-41 fps); 1.5 m reach + stride 4 keep the look at ~90 fps
+    const val SSR_MAX_DISTANCE = 1.5f
+    const val SSR_STRIDE = 4.0f
     const val FOG_START = 3.5f
     const val FOG_DENSITY = 0.06f
     const val FOG_HEIGHT_FALLOFF = 0.4f

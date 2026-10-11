@@ -98,25 +98,25 @@ fun skewedPath(x0: Float, x1: Float, top: Float, bottom: Float, deg: Float): Pat
     return Path().apply { moveTo(x0 + s, top); lineTo(x1 + s, top); lineTo(x1 - s, bottom); lineTo(x0 - s, bottom); close() }
 }
 
+// One paint and one blur filter per radius, reused for every glow: a new MaskFilter per draw made the renderer
+// blur the shape again on every animated frame. Drawing happens on the main thread only.
+private val glowPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+private val glowFilters = HashMap<Int, BlurMaskFilter>()
+
+private fun glowPaint(color: Color, blurPx: Float): android.graphics.Paint {
+    val r = blurPx.coerceAtLeast(0.5f)
+    glowPaint.color = color.toArgb()
+    glowPaint.maskFilter = glowFilters.getOrPut((r * 4f).toInt()) { BlurMaskFilter(r, BlurMaskFilter.Blur.NORMAL) }
+    return glowPaint
+}
+
 /** Soft neon glow behind a shape (blur mask on the framework paint; works on the hardware canvas since API 28). */
 fun DrawScope.drawGlow(path: Path, color: Color, blurPx: Float) {
-    drawIntoCanvas { canvas ->
-        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            this.color = color.toArgb()
-            maskFilter = BlurMaskFilter(blurPx.coerceAtLeast(0.5f), BlurMaskFilter.Blur.NORMAL)
-        }
-        canvas.nativeCanvas.drawPath(path.asAndroidPath(), p)
-    }
+    drawIntoCanvas { canvas -> canvas.nativeCanvas.drawPath(path.asAndroidPath(), glowPaint(color, blurPx)) }
 }
 
 fun DrawScope.drawGlowCircle(center: Offset, radius: Float, color: Color, blurPx: Float) {
-    drawIntoCanvas { canvas ->
-        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            this.color = color.toArgb()
-            maskFilter = BlurMaskFilter(blurPx, BlurMaskFilter.Blur.NORMAL)
-        }
-        canvas.nativeCanvas.drawCircle(center.x, center.y, radius, p)
-    }
+    drawIntoCanvas { canvas -> canvas.nativeCanvas.drawCircle(center.x, center.y, radius, glowPaint(color, blurPx)) }
 }
 
 val easeOutQuint = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f)   // prototype: cubic-bezier(.2,.8,.2,1)

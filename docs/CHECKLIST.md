@@ -5,7 +5,7 @@ Update this file after every work session.
 **Legend:** ✅ done · 🔲 to do · 🚧 in progress · ⛔ blocked (see the *Blocked* section for why)
 
 **Last updated:** 2026-10-11
-**Current phase:** Phase 2 (3D garage in the app): garage + game UI built and running on the Pixel; phone test done and fixed; next: performance check, then remove the old 2D routes
+**Current phase:** Phase 2 (3D garage in the app): garage + game UI built and running on the Pixel; phone test done and fixed, performance pass done; next: remove the old 2D routes
 
 ---
 
@@ -104,7 +104,13 @@ Update this file after every work session.
 - ✅ Condition glow per part (status view) and selection pulse
 - ✅ Phone test 1 (2026-10-10/11) found: lime haze on the turntable, bike too low (wheels over the mode tabs), selected part painted solid lime, part-card stats hidden under the buttons, nameplate subtitle showing through the menu header, edge swipe could trigger Android's back gesture
 - ✅ Fixes checked on the phone with screenshots: rim light 5200→2400 cd, aimed higher with a narrower cone (no lime pool on the turntable), front fill 2600→3800 cd, bloom 0.2→0.12; camera target 0.6→0.47 m and a bit further back (menu modes 2.9–3.0 m so the bike fits beside the panel); selection glow ~¼; card header scrolls with the stats; subtitle fades with the odometer; back-gesture exclusion on the middle 46 % of both edges (mode swipe only starts there)
-- 🔲 Check performance on the Pixel 9 Pro (60–120 fps)
+- ✅ Performance pass (2026-10-11), measured on the Pixel with SurfaceFlinger frame timing + gfxinfo + top:
+  - 3D while dragging: 28–41 fps → **~90 fps** (never below 60). Each effect measured on/off: floor reflections (SSR) were the biggest cost → reach 1.5 m + stride 4 (same look); MSAA 4× off (FXAA stays); PCF shadows instead of VSM; 120 Hz now really requested while touching
+  - Nothing moving: redrew 10×/s at ~100 % CPU → **stops drawing** after a 1 s settle (CPU ~7 %)
+  - Idle spin / highlight pulse: 60 → **30 fps with fixed presentation time** (evenly 33.3 ms, CPU 120 % → 76 %, less heat = no throttling)
+  - **Optimized release build** (R8 + resource shrinking, signed with the debug key, `./gradlew installRelease`): UI frame median 8 → 5 ms, slow UI-thread frames halved, APK 99 → 38 MB, start 0.23 s
+  - Neon glows in the UI reuse one paint + cached blur filters (no new blur every animated frame)
+- 🔲 Service log panel is a plain scrolling list; switch to a lazy list once there are many rides/services
 - 🔲 Old 2D routes (`parts`, `timeline`, `tools`, `garage`, `part/{id}`) are no longer reachable from the home screen; remove them once nothing is missing from the game UI
 
 ## Phase 3 — NFS-style UI
@@ -177,6 +183,7 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-11 | Performance pass (Toni's OK, tracked in savvy-progress): measured every 3D effect on the phone; cheaper SSR, no MSAA, PCF shadows, 120 Hz while touching, no redraw when still, 30 fps evenly paced idle spin, optimized R8 release build, cached UI glows. Dragging 28–41 → ~90 fps, idle CPU ~100 % → ~7 %. |
 | 2026-10-11 | Phase 2 built (with Toni's OK, workers tracked in savvy-progress): garage glb, Filament garage engine, NFS game UI, integrated in `BikeApp`, installed on the Pixel. Phone test: intro, HUD, edge swipe, areas, part tap → card all work. Fixed lighting haze, framing (also beside the menus), glow strength, card layout, subtitle overlap, back-gesture conflict; re-checked on the phone with screenshots. |
 | 2026-10-10 | Prototype v2 (Toni: "way better, more NFS than GTA, must look like a garage"): real garage built in 3D (wet reflective concrete floor, block walls, roll-up shutter, pegboard, workbench, tool chest, tyre stack, hexagon LED ceiling, neon strips + SCALE 980 sign, light cone, dust) and NFS-style UI (italic menu lists with neon slab, segmented stat bars, speed-stripe wipe, banners, control prompts). |
 | 2026-10-10 | Game controls decided (edge-swipe modes, drag = rotate). Clickable prototype v1 built with the real 3D bike and published for testing on the phone. |

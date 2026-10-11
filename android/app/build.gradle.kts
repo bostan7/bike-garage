@@ -21,7 +21,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // The build to use on the phone: R8-optimized Compose runs much smoother than the debug build.
+            // Personal app, so it is signed with the local debug key and installs over a debug build (data kept).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
