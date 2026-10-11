@@ -45,6 +45,7 @@ import dev.toni.scalebike.data.Part
 import dev.toni.scalebike.data.PartStatus
 import dev.toni.scalebike.data.Ride
 import dev.toni.scalebike.data.kmOnPart
+import dev.toni.scalebike.data.money
 import dev.toni.scalebike.data.km
 import dev.toni.scalebike.data.odometerKm
 import dev.toni.scalebike.garage.PartHealth
@@ -96,7 +97,7 @@ fun RightPanel(width: Dp, rightInset: Dp, modifier: Modifier = Modifier, content
 }
 
 @Composable
-private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
+internal fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(text.uppercase(), style = capsLabel(12.sp, G.neon, FontWeight.SemiBold, 0.22.em), modifier = modifier.padding(start = 6.dp, top = 12.dp, bottom = 4.dp))
 }
 
@@ -248,8 +249,9 @@ fun WorkshopPanel(
     onToggle: (Int) -> Unit,
     onWeight: (Int) -> Unit,
     onTubeless: (Boolean) -> Unit,
+    onFitNotes: () -> Unit,
 ) {
-    LeftPanel(width, leftInset, header = { PanelHeader("Workshop", "Pre-ride check · tyre pressure · torque") }) {
+    LeftPanel(width, leftInset, header = { PanelHeader("Workshop", "Pre-ride check · tyre pressure · torque · fit") }) {
         ListNote("Last pre-ride check: ${Dates.format(data.lastChecklistDate)} · ${checked.size}/${PRE_RIDE_CHECK.size}")
         PRE_RIDE_CHECK.forEachIndexed { i, (title, detail) ->
             CheckRow(title, detail, i in checked) { onToggle(i) }
@@ -281,6 +283,11 @@ fun WorkshopPanel(
             }
         }
         ListNote("Typical values. Use the number printed on the part or frame if it differs.")
+
+        SectionLabel("Fit & setup notes")
+        Text(data.fitNotes.ifBlank { "No notes yet." }, style = bodyText(13.sp), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+        Spacer(Modifier.height(4.dp))
+        ActButton("Edit fit notes", "Saddle height, spacers, fork clicks, pressures", onFitNotes, Modifier.fillMaxWidth())
     }
 }
 
@@ -331,8 +338,9 @@ fun BikePanel(
     onDeleteRide: (Ride) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
+    onReset: () -> Unit,
 ) {
-    LeftPanel(width, leftInset, header = { PanelHeader("Bike", "Info · rides · backup") }) {
+    LeftPanel(width, leftInset, header = { PanelHeader("Bike", "Info · rides · costs · backup") }) {
         Column(Modifier.padding(start = 6.dp, end = 6.dp, top = 4.dp, bottom = 4.dp)) {
             KeyValue("Model", "${data.bike.name} (${data.bike.year}) · art. 280483")
             KeyValue("Size / colour", "${data.bike.size} · ${data.bike.color}")
@@ -369,10 +377,27 @@ fun BikePanel(
             }
         }
 
+        // costs (bike + new parts + service/labour, running cost without the bike itself)
+        val bikePrice = data.bike.purchasePrice ?: 0.0
+        val upgrades = data.parts.filter { !it.stock }.mapNotNull { it.price }.sum()
+        val service = data.events.mapNotNull { it.cost }.sum()
+        val odo = data.odometerKm()
+        SectionLabel("Costs")
+        Column(Modifier.padding(horizontal = 6.dp)) {
+            KeyValue("Bike", bikePrice.money())
+            KeyValue("New parts", upgrades.money())
+            KeyValue("Service", service.money())
+            KeyValue("Total", (bikePrice + upgrades + service).money(), numText(14.sp, G.neon))
+            if (odo > 0) KeyValue("Per km", "${((upgrades + service) / odo).money()} (parts + service)")
+        }
+
         SectionLabel("Backup")
         ListNote("Saves parts, history, issues and rides to a file (photos are not included). Keep a copy in Google Drive.")
         HoldButton("Export backup", fx, onExport, Modifier.fillMaxWidth(), hint = "Hold · choose where to save")
         Spacer(Modifier.height(5.dp))
         HoldButton("Import backup", fx, onImport, Modifier.fillMaxWidth(), hint = "Hold · replaces all data after a check")
+
+        SectionLabel("Danger zone")
+        HoldButton("Reset all data", fx, onReset, Modifier.fillMaxWidth(), hint = "Hold · then confirm · starts the setup again")
     }
 }

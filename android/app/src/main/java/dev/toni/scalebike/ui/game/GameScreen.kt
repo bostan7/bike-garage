@@ -54,16 +54,19 @@ import dev.toni.scalebike.data.BikeData
 import dev.toni.scalebike.data.Category
 import dev.toni.scalebike.data.Dates
 import dev.toni.scalebike.data.EventType
+import dev.toni.scalebike.data.Issue
 import dev.toni.scalebike.data.Part
 import dev.toni.scalebike.data.Ride
 import dev.toni.scalebike.data.ServiceEvent
 import dev.toni.scalebike.data.addRide
 import dev.toni.scalebike.data.deleteEvent
+import dev.toni.scalebike.data.deleteIssue
 import dev.toni.scalebike.data.deleteRide
 import dev.toni.scalebike.data.km
 import dev.toni.scalebike.data.newId
 import dev.toni.scalebike.data.odometerKm
 import dev.toni.scalebike.data.replacePart
+import dev.toni.scalebike.data.updatePart
 import dev.toni.scalebike.data.upsertEvent
 import dev.toni.scalebike.data.upsertIssue
 import dev.toni.scalebike.garage.GarageController
@@ -72,6 +75,8 @@ import dev.toni.scalebike.garage.PartHealth
 import dev.toni.scalebike.ui.AddRideDialog
 import dev.toni.scalebike.ui.BikeInfoDialog
 import dev.toni.scalebike.ui.ConfirmDialog
+import dev.toni.scalebike.ui.EditPartDialog
+import dev.toni.scalebike.ui.FitNotesDialog
 import dev.toni.scalebike.ui.EventDialog
 import dev.toni.scalebike.ui.IssueDialog
 import dev.toni.scalebike.ui.LocalRepo
@@ -116,8 +121,9 @@ class GameUi(val fx: GameFx) {
     /** Pre-ride check ticks survive switching modes. */
     val checked = mutableStateListOf<Int>()
 
-    /** Last quick "LOG SERVICE" event, so DETAILS can edit it. */
-    var lastQuickEvent: ServiceEvent? = null
+    /** Part shown in the PARTS details panel (left), or null for the parts list. May be a retired part. */
+    var detailsId by mutableStateOf<String?>(null)
+        private set
 
     private val modes = GarageMode.entries
 
@@ -144,6 +150,7 @@ class GameUi(val fx: GameFx) {
         if (target != GarageMode.PARTS || changed) {
             selected = null
             area = null
+            detailsId = null
         }
         controller?.showMode(target)
         if (changed && !quiet) {
@@ -177,15 +184,28 @@ class GameUi(val fx: GameFx) {
         }
         area = part.category
         selected = slot
+        if (detailsId != null) detailsId = part.id   // details open: follow the newly picked part
         fx.tick()
         controller?.flyToPart(slot)
         touch()
     }
 
-    /** Back: close card → leave area → GARAGE. Returns false when there is nothing to go back to. */
+    /** DETAILS on the card, or another part of the same slot inside the details panel. */
+    fun openDetails(partId: String) {
+        detailsId = partId
+        fx.tick()
+        touch()
+    }
+
+    /** Back: close details → close card → leave area → GARAGE. Returns false when there is nothing to go back to. */
     fun back(): Boolean {
         if (!introDone) {
             skipIntro()
+            return true
+        }
+        if (detailsId != null) {
+            detailsId = null
+            fx.tick()
             return true
         }
         if (selected != null) {
@@ -210,6 +230,7 @@ class GameUi(val fx: GameFx) {
     fun doubleTap() {
         selected = null
         area = null
+        detailsId = null
         controller?.resetCamera()
     }
 
@@ -277,6 +298,10 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
     var issueFor by remember { mutableStateOf<Part?>(null) }
     var replaceFor by remember { mutableStateOf<Part?>(null) }
     var eventEdit by remember { mutableStateOf<EventEdit?>(null) }
+    var issueEdit by remember { mutableStateOf<Issue?>(null) }
+    var partEdit by remember { mutableStateOf<Part?>(null) }
+    var fitDialog by remember { mutableStateOf(false) }
+    var resetConfirm by remember { mutableStateOf(false) }
     var pendingImport by remember { mutableStateOf<android.net.Uri?>(null) }
 
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -325,7 +350,7 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
         controller?.setSelected(ui.selected)
     }
 
-    BackHandler(enabled = !ui.introDone || ui.selected != null || ui.area != null || ui.mode != GarageMode.GARAGE) {
+    BackHandler(enabled = !ui.introDone || ui.detailsId != null || ui.selected != null || ui.area != null || ui.mode != GarageMode.GARAGE) {
         ui.back()
     }
 
@@ -407,11 +432,27 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
                 onLogRide = { fx.tick(); rideDialog = true },
             )
         }
-        AnimatedVisibility(leftOpen && ui.mode == GarageMode.PARTS, panelPad.align(Alignment.TopStart), enterL, exitL) {
+        val detailsPart = ui.detailsId?.let { id -> data.parts.firstOrNull { it.id == id } }
+            ?.takeIf { ui.mode == GarageMode.PARTS }
+        AnimatedVisibility(leftOpen && ui.mode == GarageMode.PARTS && detailsPart == null, panelPad.align(Alignment.TopStart), enterL, exitL) {
             PartsPanel(
                 data, summary, ui.area, ui.selected, leftW, insetL,
                 onArea = ui::openArea, onPart = ui::selectPart, onBack = { ui.back() },
             )
+        }
+        var lastDetails by remember { mutableStateOf<Part?>(null) }
+        if (detailsPart != null) lastDetails = detailsPart
+        AnimatedVisibility(leftOpen && detailsPart != null, panelPad.align(Alignment.TopStart), enterL, exitL) {
+            lastDetails?.let { p ->
+                DetailsPanel(
+                    data, p, leftW, insetL,
+                    onBack = { ui.back() },
+                    onEdit = { fx.tick(); partEdit = p },
+                    onEvent = { e -> fx.tick(); eventEdit = EventEdit(p, e) },
+                    onIssue = { i -> fx.tick(); issueEdit = i },
+                    onOtherPart = { o -> ui.openDetails(o.id) },
+                )
+            }
         }
         AnimatedVisibility(leftOpen && ui.mode == GarageMode.WORKSHOP, panelPad.align(Alignment.TopStart), enterL, exitL) {
             WorkshopPanel(
@@ -429,6 +470,7 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
                 },
                 onWeight = { w -> repo.update { it.copy(riderWeightKg = w.toDouble()) } },
                 onTubeless = { v -> fx.tick(); repo.update { it.copy(tubeless = v) } },
+                onFitNotes = { fx.tick(); fitDialog = true },
             )
         }
         AnimatedVisibility(leftOpen && ui.mode == GarageMode.BIKE, panelPad.align(Alignment.TopStart), enterL, exitL) {
@@ -440,6 +482,7 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
                 onDeleteRide = { r -> fx.tick(); deleteRide = r },
                 onExport = { exporter.launch("scale980-backup-${Dates.today()}.json") },
                 onImport = { importer.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) },
+                onReset = { resetConfirm = true },
             )
         }
 
@@ -456,13 +499,9 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
                     onLogService = {
                         val e = ServiceEvent(newId(), part.id, Dates.today(), odo, EventType.SERVICE, "Service")
                         repo.upsertEvent(e)
-                        ui.lastQuickEvent = e
                         ui.showBanner("Service logged", "${part.name} · ${groupedKm(odo)} km")
                     },
-                    onDetails = {
-                        fx.tick()
-                        eventEdit = EventEdit(part, ui.lastQuickEvent?.takeIf { it.partId == part.id && data.events.any { e -> e.id == it.id } })
-                    },
+                    onDetails = { ui.openDetails(part.id) },
                     onIssue = { fx.tick(); issueFor = part },
                     onReplace = { replaceFor = part },
                 )
@@ -525,9 +564,35 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
             ui.showBanner("Issue reported", p.name)
         })
     }
+    issueEdit?.let { issue ->
+        IssueDialog(
+            issue.partId, issue, odo,
+            onDismiss = { issueEdit = null },
+            onSave = { i -> repo.upsertIssue(i); ui.showBanner(if (i.resolved) "Issue resolved" else "Issue saved", i.title) },
+            onDelete = { repo.deleteIssue(issue); issueEdit = null },
+        )
+    }
+    if (fitDialog) {
+        FitNotesDialog(data.fitNotes, onDismiss = { fitDialog = false }, onSave = { t ->
+            repo.update { it.copy(fitNotes = t) }
+            ui.showBanner("Fit notes saved", "Workshop")
+        })
+    }
+    if (resetConfirm) {
+        ConfirmDialog(
+            "Reset all data?", "Parts, history, issues and rides are deleted and the setup starts again. Export a backup first.",
+            confirmLabel = "Reset",
+            onConfirm = { repo.resetAll() },
+            onDismiss = { resetConfirm = false },
+        )
+    }
+    partEdit?.let { p ->
+        EditPartDialog(p, onDismiss = { partEdit = null }, onSave = { np -> repo.updatePart(np); ui.showBanner("Part saved", np.name) })
+    }
     replaceFor?.let { old ->
         ReplacePartDialog(old, odo, onDismiss = { replaceFor = null }) { new, d, o, labour, note ->
             repo.replacePart(old, new, d, o, labour, note)
+            if (ui.detailsId == old.id) ui.openDetails(new.id)
             ui.showBanner("Part replaced", "${new.brand} ${new.model}")
         }
     }
@@ -535,8 +600,8 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
         EventDialog(
             p.id, initial, odo,
             onDismiss = { eventEdit = null },
-            onSave = { e -> repo.upsertEvent(e); ui.lastQuickEvent = e; ui.showBanner("Service saved", p.name) },
-            onDelete = initial?.let { ev -> { repo.deleteEvent(ev.id); ui.lastQuickEvent = null; eventEdit = null } },
+            onSave = { e -> repo.upsertEvent(e); ui.showBanner("Saved", p.name) },
+            onDelete = initial?.let { ev -> { repo.deleteEvent(ev.id); eventEdit = null } },
         )
     }
     pendingImport?.let { uri ->

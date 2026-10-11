@@ -162,6 +162,15 @@ fun BikeInfoDialog(bike: BikeInfo, onDismiss: () -> Unit, onSave: (BikeInfo) -> 
     }
 }
 
+/** Free-text fit & setup notes (saddle height, spacers, fork clicks, pressures). */
+@Composable
+fun FitNotesDialog(notes: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var text by remember { mutableStateOf(notes) }
+    FormDialog("Fit & setup notes", onDismiss, onSave = { onSave(text.trimEnd()); onDismiss() }) {
+        Field(text, { text = it }, "Notes", singleLine = false, minLines = 6)
+    }
+}
+
 // ---------------------------------------------------------------- service events
 
 @Composable

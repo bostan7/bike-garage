@@ -227,7 +227,10 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
         camera.setExposure(T.APERTURE, T.SHUTTER, T.ISO)
         setupView()
         setupLights()
-        skybox = Skybox.Builder().color(T.SKY[0], T.SKY[1], T.SKY[2], 1f).build(engine).also { scene.skybox = it }
+        // intensity = the IBL's: until the IBL is set, Filament lights the sky with its default 30000 and the dark
+        // sky colour flashed light grey for ~0.2 s at start (seen in a screen recording 2026-10-11)
+        skybox = Skybox.Builder().color(T.SKY[0], T.SKY[1], T.SKY[2], 1f).intensity(T.IBL_INTENSITY)
+            .build(engine).also { scene.skybox = it }
         jumpToPreset()
         loadAsync()
     }

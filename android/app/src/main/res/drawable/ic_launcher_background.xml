@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher icon background: near-black with a faint speed band and a neon glow. Generated. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- base -->
+    <path
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z"
+        android:fillColor="#FF0E0F11" />
+    <!-- speed band -->
+    <path
+        android:pathData="M-10,92 L70,-10 L84,-10 L4,92 Z"
+        android:fillColor="#0DFFFFFF" />
+    <!-- thin speed line -->
+    <path
+        android:pathData="M30,118 L118,6 L122,6 L34,118 Z"
+        android:fillColor="#14D2F500" />
+    <!-- neon glow -->
+    <path
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="54" android:centerY="53" android:gradientRadius="40">
+                <item android:offset="0" android:color="#47D2F500" />
+                <item android:offset="0.45" android:color="#1CD2F500" />
+                <item android:offset="1" android:color="#00D2F500" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

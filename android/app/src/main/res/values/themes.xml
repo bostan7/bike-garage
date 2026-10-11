@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFF6A13</color>
-
     <style name="Theme.ScaleBike" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">#FF0E0F11</item>
+        <!-- Android 12+ splash: dark garage background + neon 980 slab (res/drawable/splash_icon.xml) -->
         <item name="android:windowSplashScreenBackground">#FF0E0F11</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
     </style>
 </resources>

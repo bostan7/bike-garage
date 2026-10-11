@@ -60,7 +60,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.activity:activity-compose:1.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
-    implementation("androidx.navigation:navigation-compose:2.9.5")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
 

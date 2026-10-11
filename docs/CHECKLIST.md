@@ -5,7 +5,7 @@ Update this file after every work session.
 **Legend:** ✅ done · 🔲 to do · 🚧 in progress · ⛔ blocked (see the *Blocked* section for why)
 
 **Last updated:** 2026-10-11
-**Current phase:** Phase 2 (3D garage in the app): garage + game UI built and running on the Pixel; phone test done and fixed, performance pass done; next: remove the old 2D routes
+**Current phase:** Phase 2 (3D garage in the app): garage + game UI built and running on the Pixel; phone test, performance pass, part details panel and old-page cleanup done; next: Phase 5 extras / Phase 6 polish (Toni decides)
 
 ---
 
@@ -111,7 +111,11 @@ Update this file after every work session.
   - **Optimized release build** (R8 + resource shrinking, signed with the debug key, `./gradlew installRelease`): UI frame median 8 → 5 ms, slow UI-thread frames halved, APK 99 → 38 MB, start 0.23 s
   - Neon glows in the UI reuse one paint + cached blur filters (no new blur every animated frame)
 - 🔲 Service log panel is a plain scrolling list; switch to a lazy list once there are many rides/services
-- 🔲 Old 2D routes (`parts`, `timeline`, `tools`, `garage`, `part/{id}`) are no longer reachable from the home screen; remove them once nothing is missing from the game UI
+- ✅ Part details panel in the game UI (`ui/game/GameDetails.kt`, opened by DETAILS on the part card): maintenance progress bars, about + pros/cons, ownership, issues (tap = edit / resolve / photos), history (tap = edit), other parts in the same slot, notes, Edit part. Tapping another part on the bike switches the panel; Back closes it first
+- ✅ Moved the last old-page features into the game UI: costs + reset all data (BIKE), fit & setup notes (WORKSHOP)
+- ✅ Old 2D pages deleted (Home, Timeline, Tools, Garage, PartDetail) + their unused helpers; navigation-compose dependency removed. Setup screen kept for first launch
+- ✅ Phone check (2026-10-11): details panel opens from DETAILS and scrolls through all sections (header made compact + Edit part moved to the end after the first check showed only ~4 lines), WORKSHOP fit notes, BIKE costs. Reset all data not pressed on purpose (it deletes the data)
+- ✅ Fixed a light-grey flash at app start (~0.2 s): the sky used Filament's default intensity 30000 until the IBL loaded; now it uses the IBL's. Checked with a screen recording
 
 ## Phase 3 — NFS-style UI
 
@@ -124,12 +128,14 @@ Update this file after every work session.
 
 ## Phase 4 — Part details (reuses existing logic)
 
-- 🔲 Ownership: date got, odometer then, km on part, age, price, shop
-- 🔲 Maintenance: what to do, interval progress bars, log a service
-- 🔲 Pros and cons
-- 🔲 Issues: report with photos and severity, mark resolved
-- 🔲 History of services, repairs and installs
-- 🔲 Replace-a-part flow plus previous parts in the same slot
+Built 2026-10-11 as the game-UI details panel (`ui/game/GameDetails.kt`) + part card; checked on the phone.
+
+- ✅ Ownership: date got, odometer then, km on part, age, price, shop
+- ✅ Maintenance: what to do, interval progress bars, log a service
+- ✅ Pros and cons
+- ✅ Issues: report with photos and severity, mark resolved
+- ✅ History of services, repairs and installs
+- ✅ Replace-a-part flow plus previous parts in the same slot
 
 ## Phase 5 — Upgrades & extras
 
@@ -143,7 +149,7 @@ Update this file after every work session.
 ## Phase 6 — Polish & install
 
 - 🔲 First-launch setup (purchase date, current km)
-- 🔲 App icon and splash screen
+- ✅ App icon and splash screen (2026-10-11): neon-yellow slab with "980" cut out (Barlow Condensed Black Italic outlines) + speed trail on near-black, themed monochrome icon for Android 13+, dark start screen with the slab + GARAGE. Vector only (`res/drawable/ic_launcher_*`, `splash_icon.xml`, theme `windowSplashScreenAnimatedIcon`). Previews made with a scratchpad script; splash checked on the phone (screen recording)
 - 🔲 Test everything on the real Pixel 9 Pro
 - 🔲 Install the final version on the phone
 
@@ -183,6 +189,7 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-11 | Phone not connected: built the part details panel (Phase 4 in the game UI), moved costs / reset / fit notes into BIKE and WORKSHOP, deleted the old 2D pages + navigation dependency, new app icon + splash (worker, previews checked). Checked on the phone; fixed a start-up grey flash and the cramped details panel. |
 | 2026-10-11 | Performance pass (Toni's OK, tracked in savvy-progress): measured every 3D effect on the phone; cheaper SSR, no MSAA, PCF shadows, 120 Hz while touching, no redraw when still, 30 fps evenly paced idle spin, optimized R8 release build, cached UI glows. Dragging 28–41 → ~90 fps, idle CPU ~100 % → ~7 %. |
 | 2026-10-11 | Phase 2 built (with Toni's OK, workers tracked in savvy-progress): garage glb, Filament garage engine, NFS game UI, integrated in `BikeApp`, installed on the Pixel. Phone test: intro, HUD, edge swipe, areas, part tap → card all work. Fixed lighting haze, framing (also beside the menus), glow strength, card layout, subtitle overlap, back-gesture conflict; re-checked on the phone with screenshots. |
 | 2026-10-10 | Prototype v2 (Toni: "way better, more NFS than GTA, must look like a garage"): real garage built in 3D (wet reflective concrete floor, block walls, roll-up shutter, pegboard, workbench, tool chest, tyre stack, hexagon LED ceiling, neon strips + SCALE 980 sign, light cone, dust) and NFS-style UI (italic menu lists with neon slab, segmented stat bars, speed-stripe wipe, banners, control prompts). |
