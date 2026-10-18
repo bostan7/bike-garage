@@ -14,9 +14,8 @@ Update this file after every work session.
 | Item | Waiting on | Blocks |
 |---|---|---|
 | Toni's scratches + accessories (mudguard, small saddle bag, bell, light, Kryptonite chain lock) | Toni: photos when he has access to the bike | Adding them to the model (built stock for now) |
-| Exact WTB grip model + stem length | Toni (grips: black WTB lock-on with clamps both ends; stem: printed on it) | Small details (grips built WTB Wafel-like, stem 75 mm) |
-| Saddle + pedal models | Toni's photos (saddle: bigger and softer than the Belcarra; pedals: silver two-sided trekking) | Exact shapes (built as a generic comfort saddle and Wellgo B087-like pedals) |
-| Own photos of the bike (with my modifications) | Toni: no access to the bike for a few days. Take photos from the [photo checklist](#photo-checklist) | Model refinement: Toni's modifications + small details (v1 is built from official material) |
+| Stem length, crank length, fork decal | Toni: left open for now (2026-10-18). Stem: printed on its side; crank: stamped inside the arm; fork: decal on the lower leg | Small details (built 75 mm stem, 175 mm cranks, XCR 32) |
+| Plan for the photo findings (data updates, 3D accessories with an on/off button, model fixes) | Toni's OK on the plan | Updating parts, issues and the 3D model |
 | Checks on the real bike | Toni: [BIKE-SPECS.md → Measure on the real bike](BIKE-SPECS.md#measure-on-the-real-bike-) (fork decal XCR32/X1, stem length, **crank length: Toni thinks 175 mm, to check (stamped inside the arm)**, **fork decal XCR 32 or X1 32 (Toni: don't know yet)**, valve type Presta/Schrader…) | Small details only |
 
 ---
@@ -144,7 +143,8 @@ Built 2026-10-11 as the game-UI details panel (`ui/game/GameDetails.kt`) + part 
 - 🔲 Timeline of all events
 - 🔲 Tools: pre-ride checklist, tyre pressure helper, torque table, fit notes
 - 🔲 Costs: bike + upgrades + services, cost per km
-- 🔲 Rides log + odometer correction
+- ✅ Rides log + odometer correction (BIKE panel)
+- ✅ **Ride km from Google Maps Timeline** (2026-10-11, PLAN 5c): BIKE → hold Import rides from Timeline → streams `Timeline.json`, bike trips only (≥ 50 % sure, ≤ 35 km/h), one ride per day (`timeline-yyyy-MM-dd`), re-import never double-counts. Tested on the phone with Toni's file: 70 days, 331 trips, odometer 0 → 624 km (matches the PC check)
 
 ## Phase 6 — Polish & install
 
@@ -189,6 +189,8 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-18 | Toni sent 20 photos (saved in `photos/`, not in git) + answers: pedals Giant Flipside Commuter (flat side only), saddle = hydrofoam comfort saddle (from a Kettler bike, nose torn), headset top cap + star nut replaced by Cane Creek (star nut broke), fell on the drive side → big shifting problems now, brake pads never changed (front caliper slightly misaligned), chain cleaned + lubed ~3 months ago, rear light = McDonald's "M" light, rear mudguard Polisport Cross Country EVO; wants accessories in 3D with an on/off button. Timeline data only starts 22 Jun 2026. Timeline import committed. |
+| 2026-10-11 | Timeline ride import built and tested on the phone (624 km). |
 | 2026-10-11 | Phone not connected: built the part details panel (Phase 4 in the game UI), moved costs / reset / fit notes into BIKE and WORKSHOP, deleted the old 2D pages + navigation dependency, new app icon + splash (worker, previews checked). Checked on the phone; fixed a start-up grey flash and the cramped details panel. |
 | 2026-10-11 | Performance pass (Toni's OK, tracked in savvy-progress): measured every 3D effect on the phone; cheaper SSR, no MSAA, PCF shadows, 120 Hz while touching, no redraw when still, 30 fps evenly paced idle spin, optimized R8 release build, cached UI glows. Dragging 28–41 → ~90 fps, idle CPU ~100 % → ~7 %. |
 | 2026-10-11 | Phase 2 built (with Toni's OK, workers tracked in savvy-progress): garage glb, Filament garage engine, NFS game UI, integrated in `BikeApp`, installed on the Pixel. Phone test: intro, HUD, edge swipe, areas, part tap → card all work. Fixed lighting haze, framing (also beside the menus), glow strength, card layout, subtitle overlap, back-gesture conflict; re-checked on the phone with screenshots. |

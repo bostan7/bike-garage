@@ -49,6 +49,10 @@ class BikeRepository(private val context: Context) {
         persist(d)
     }
 
+    /** Reads the bike trips of a Google Timeline export (streams a big file: call it off the main thread). */
+    fun readTimeline(uri: Uri): TimelineImport.Parsed =
+        context.contentResolver.openInputStream(uri)!!.use { TimelineImport.parse(it) }
+
     /** Copies a picked image into app storage and returns its file name. */
     fun savePhoto(uri: Uri): String? = runCatching {
         val name = "${newId()}.jpg"

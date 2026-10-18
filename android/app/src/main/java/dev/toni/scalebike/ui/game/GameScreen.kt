@@ -59,6 +59,7 @@ import dev.toni.scalebike.data.Part
 import dev.toni.scalebike.data.Ride
 import dev.toni.scalebike.data.ServiceEvent
 import dev.toni.scalebike.data.addRide
+import dev.toni.scalebike.data.applyTimeline
 import dev.toni.scalebike.data.deleteEvent
 import dev.toni.scalebike.data.deleteIssue
 import dev.toni.scalebike.data.deleteRide
@@ -82,8 +83,10 @@ import dev.toni.scalebike.ui.IssueDialog
 import dev.toni.scalebike.ui.LocalRepo
 import dev.toni.scalebike.ui.OdometerDialog
 import dev.toni.scalebike.ui.ReplacePartDialog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -312,6 +315,27 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
         }
     }
     val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> pendingImport = uri }
+    // Google Timeline export → one ride per day; the 50+ MB file is streamed off the main thread
+    val timelinePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        ui.showBanner("Reading Timeline", "Bike trips only")
+        scope.launch {
+            runCatching { withContext(Dispatchers.IO) { repo.readTimeline(uri) } }
+                .onSuccess { parsed ->
+                    if (parsed.days.isEmpty()) {
+                        ui.showBanner("No bike rides found", "Nothing changed")
+                    } else {
+                        val m = repo.applyTimeline(parsed.days)
+                        fx.confirm()
+                        ui.showBanner(
+                            "+ ${m.km.km()} from Timeline",
+                            "${m.newDays} new day${if (m.newDays == 1) "" else "s"} · ${m.updatedDays} updated · ${parsed.trips} trips",
+                        )
+                    }
+                }
+                .onFailure { ui.showBanner("Not a Timeline file", "Nothing changed") }
+        }
+    }
 
     // ---------------------------------------------------------------- 3D garage wiring
     DisposableEffect(controller) {
@@ -483,6 +507,7 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
                 onExport = { exporter.launch("scale980-backup-${Dates.today()}.json") },
                 onImport = { importer.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) },
                 onReset = { resetConfirm = true },
+                onTimeline = { timelinePicker.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) },
             )
         }
 

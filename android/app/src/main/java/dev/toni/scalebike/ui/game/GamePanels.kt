@@ -44,6 +44,7 @@ import dev.toni.scalebike.data.Dates
 import dev.toni.scalebike.data.Part
 import dev.toni.scalebike.data.PartStatus
 import dev.toni.scalebike.data.Ride
+import dev.toni.scalebike.data.TimelineImport
 import dev.toni.scalebike.data.kmOnPart
 import dev.toni.scalebike.data.money
 import dev.toni.scalebike.data.km
@@ -339,6 +340,7 @@ fun BikePanel(
     onExport: () -> Unit,
     onImport: () -> Unit,
     onReset: () -> Unit,
+    onTimeline: () -> Unit,
 ) {
     LeftPanel(width, leftInset, header = { PanelHeader("Bike", "Info · rides · costs · backup") }) {
         Column(Modifier.padding(start = 6.dp, end = 6.dp, top = 4.dp, bottom = 4.dp)) {
@@ -358,12 +360,21 @@ fun BikePanel(
                     Text(groupedKm(data.odometerKm()), style = numText(36.sp))
                     Text(" KM", style = numText(14.sp, G.muted), modifier = Modifier.padding(bottom = 4.dp))
                 }
-                Text("${data.rides.size} rides logged · ${data.rides.sumOf { it.km }.km()} since setup", style = bodyText(12.sp, G.muted))
+                Text("${data.rides.size} rides · ${data.rides.sumOf { it.km }.km()} logged", style = bodyText(12.sp, G.muted))
             }
             MiniButton("Correct", onCorrectOdo)
         }
         Spacer(Modifier.height(4.dp))
         ActButton("Log a ride", "Opens the ride form", onLogRide, Modifier.fillMaxWidth(), primary = true)
+
+        // ride km from a Google Maps Timeline export (data/TimelineImport.kt)
+        SectionLabel("From Google Timeline")
+        val tlDays = data.rides.count { it.id.startsWith(TimelineImport.ID_PREFIX) }
+        ListNote(
+            data.lastTimelineImport?.let { "Last import ${Dates.format(it)} · $tlDays days from Timeline. Export a fresh file and import again any time: days are never counted twice." }
+                ?: "Phone Settings → Location → Location services → Timeline → Export Timeline data, then hold below. Only bike trips are used, one ride per day.",
+        )
+        HoldButton("Import rides from Timeline", fx, onTimeline, Modifier.fillMaxWidth(), hint = "Hold · pick Timeline.json")
 
         val recent = data.rides.sortedByDescending { it.date }.take(15)
         if (recent.isNotEmpty()) SectionLabel("Recent rides")

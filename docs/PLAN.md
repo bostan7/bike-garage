@@ -179,6 +179,24 @@ To add: `Upgrade` (wishlist item: part slot, name, price, link, stat deltas), pa
 
 ---
 
+## 5c. Plan: ride km from Google Maps Timeline (Toni, 2026-10-11) — waiting for OK to build
+
+**Why:** Toni doesn't want to log rides by hand; Google Maps Timeline already detects his bike trips correctly. Google Fit shows only steps, and Timeline has no API (it lives on the phone since 2024–25), so the route is Timeline's own export: phone Settings → Location → Location services → Timeline → **Export Timeline data** → `Timeline.json`.
+
+**Checked on Toni's export (54 MB):** `semanticSegments[]` with `activity.topCandidate.type` / `.probability`, `activity.distanceMeters`, ISO `startTime`/`endTime` with offset. 340 `CYCLING` trips, 22 Jun – 10 Oct 2026, 631 km, all with a distance; 4 trips under 50 % probability, 1 over 30 km/h.
+
+| Step | What |
+|---|---|
+| 1 | BIKE panel: hold **Import rides from Timeline** → system file picker (no storage permission) |
+| 2 | Stream-parse the file (`android.util.JsonReader`, skips `rawSignals`); keep only `CYCLING` segments with probability ≥ 0.5 and speed ≤ 35 km/h |
+| 3 | One `Ride` per local day: id `timeline-yyyy-MM-dd`, km = sum of that day's trips, note "Timeline · N trips". No schema change |
+| 4 | Re-import = merge: a day already imported is replaced by the new total; hand-logged rides are never touched |
+| 5 | **Decision (Toni): import everything** since the first Timeline day (22 Jun 2026), not only since app setup — the parts really rode those km, so service status uses them |
+| 6 | Banner with the result ("+ N days · X km"); BIKE shows when the last import was |
+| 7 | Privacy: only date + km are stored; no places or coordinates; the file is not copied into the app |
+
+---
+
 ## 6. Current state of the folder
 
 - A **2D prototype** builds and runs. It has a flat bike drawing with tappable dots, and the part detail, timeline, tools and garage screens. It was only a test, and its UI gets replaced by the 3D garage. The **data layer and logic are kept**.
