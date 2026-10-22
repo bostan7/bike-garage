@@ -33,6 +33,8 @@ Update this file after every work session.
 - 🔲 Optimisation (low): every data change rewrites `bike.json` on the main thread — fine now (~50 KB), move to a background writer if it grows
 - 🔲 Service log panel is a plain list; switch to a lazy list when there are hundreds of rides (now ~100 entries)
 
+- ✅ **Sharper 3D image** (Toni: "resolution looks bad", 2026-10-22): full resolution instead of 80 %, TAA instead of FXAA, and dynamic resolution only while the camera moves fast (drag / fly-to / intro). Measured on the phone: dragging 81 fps (was 88), idle spin an even 30 fps at full resolution, tyre text and spokes now sharp
+
 ## 🧾 Open decisions / real-bike to-dos
 
 - 🔲 26 alerts / condition 0 after counting 3 299 km: keep as to-do list, mark checked-OK parts, or log real services (Toni decides)

@@ -172,6 +172,7 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
     private var idleSinceNs = System.nanoTime()
     private var appliedRateHint = -1f
     private var lastMovingNs = 0L
+    private var dynamicResOn = false
 
     private var mode = GarageMode.GARAGE
     private var selected: String? = null
@@ -363,7 +364,10 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
             .saturation(T.SATURATION)
             .build(engine)
         view.colorGrading = colorGrading
-        view.antiAliasing = View.AntiAliasing.FXAA
+        // TAA instead of FXAA: smooths the thin spokes, chain and decal text, and a still image converges to a
+        // supersampled look (phone test 2026-10-22: same cost as FXAA, much sharper)
+        view.antiAliasing = View.AntiAliasing.NONE
+        view.temporalAntiAliasingOptions = view.temporalAntiAliasingOptions.apply { enabled = true }
         view.multiSampleAntiAliasingOptions = view.multiSampleAntiAliasingOptions.apply {
             enabled = T.MSAA_SAMPLES > 1; sampleCount = T.MSAA_SAMPLES
         }
@@ -399,7 +403,7 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
             enabled = true; midPoint = T.VIGNETTE_MID; roundness = 0.6f; feather = 0.6f
         }
         view.dynamicResolutionOptions = view.dynamicResolutionOptions.apply {
-            enabled = true; minScale = T.DYNAMIC_RES_MIN; maxScale = 1f; homogeneousScaling = true
+            enabled = false; minScale = T.DYNAMIC_RES_MIN; maxScale = 1f; homogeneousScaling = true
             quality = View.QualityLevel.MEDIUM
         }
         // PCF, not VSM: on the Mali-G715 VSM (+ its blur) was one of the three biggest costs (phone test 2026-10-11)
@@ -1088,6 +1092,7 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
 
         val rate = if (loaded) update(frameTimeNanos, dt) else RATE_STATIC
         updateRateHint(rate)
+        setDynamicResolution(rate == RATE_ACTIVE)
         // When nothing moves, keep drawing for a short settle time (dynamic resolution climbs back to full
         // sharpness, reflections catch up), then stop: the last image stays on screen at zero GPU cost.
         if (rate != RATE_STATIC) lastMovingNs = frameTimeNanos
@@ -1109,6 +1114,17 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
             lastRenderNs = frameTimeNanos
             dirty = false
         }
+    }
+
+    /**
+     * The resolution may only drop while the camera moves fast (drag, fly-to, intro): there blur is not noticed and
+     * it keeps ~80 fps. Still images and the slow idle spin are always drawn at full resolution (30 fps is enough).
+     */
+    private fun setDynamicResolution(on: Boolean) {
+        if (on == dynamicResOn) return
+        dynamicResOn = on
+        view.dynamicResolutionOptions = view.dynamicResolutionOptions.apply { enabled = on }
+        dirty = true
     }
 
     private fun update(now: Long, dt: Double): Int {

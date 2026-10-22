@@ -21,9 +21,11 @@ internal object GarageTuning {
 
     // ---------------------------------------------------------------- render quality / performance
     /** The surface is rendered at this fraction of the view size and scaled up by the compositor. */
-    const val RENDER_SCALE = 0.8f
-    const val DYNAMIC_RES_MIN = 0.6f
-    /** 1 = MSAA off; FXAA smooths the edges. 4x MSAA cost ~10 ms per frame on the Mali-G715 for little gain. */
+    // phone test 2026-10-22: 0.8 + dynamic resolution always on looked blurry; now full resolution, and the
+    // dynamic drop (down to 50 %) is only used while the camera moves fast (GarageScene.setDynamicResolution)
+    const val RENDER_SCALE = 1.0f
+    const val DYNAMIC_RES_MIN = 0.5f
+    /** 1 = MSAA off; TAA smooths the edges. 4x MSAA cost ~10 ms per frame on the Mali-G715 for little gain. */
     const val MSAA_SAMPLES = 1
 
     /** Frames are drawn every vsync while active (120 Hz); at most every IDLE_FRAME_NS when only the slow turntable
