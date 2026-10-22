@@ -18,6 +18,8 @@ data class BikeData(
     val fitNotes: String = DEFAULT_FIT_NOTES,
     /** Day of the last "Import rides from Timeline" (rides from it have ids `timeline-yyyy-MM-dd`). */
     val lastTimelineImport: String? = null,
+    /** Fill the time before Timeline with estimated rides; off once the odometer was corrected by hand. */
+    val estimateBeforeTimeline: Boolean = true,
 )
 
 const val DEFAULT_FIT_NOTES = """Saddle height (BB centre → top of saddle): ___ mm

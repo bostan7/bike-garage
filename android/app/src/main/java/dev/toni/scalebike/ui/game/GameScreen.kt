@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.min
 import dev.toni.scalebike.data.BikeData
 import dev.toni.scalebike.data.Category
 import dev.toni.scalebike.data.Dates
+import dev.toni.scalebike.data.ESTIMATE_PREFIX
 import dev.toni.scalebike.data.EventType
 import dev.toni.scalebike.data.Issue
 import dev.toni.scalebike.data.Part
@@ -60,6 +61,7 @@ import dev.toni.scalebike.data.Ride
 import dev.toni.scalebike.data.ServiceEvent
 import dev.toni.scalebike.data.addRide
 import dev.toni.scalebike.data.applyTimeline
+import dev.toni.scalebike.data.withFreshEstimate
 import dev.toni.scalebike.data.deleteEvent
 import dev.toni.scalebike.data.deleteIssue
 import dev.toni.scalebike.data.deleteRide
@@ -374,13 +376,10 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
     LaunchedEffect(controller, ui.selected) {
         controller?.setSelected(ui.selected)
     }
-    LaunchedEffect(controller, fx.accessoriesOn) {
-        controller?.setAccessoriesVisible(fx.accessoriesOn)
-    }
-    // looking at an accessory brings the accessories back if they were hidden
-    LaunchedEffect(ui.area, ui.selected) {
-        val wantsThem = ui.area == Category.ACCESSORIES || ui.selected?.startsWith("acc_") == true
-        if (wantsThem && !fx.accessoriesOn) fx.toggleAccessories()
+    // looking at an accessory shows the accessories for that moment only; the saved chip setting stays as it is
+    val showAccessories = fx.accessoriesOn || ui.area == Category.ACCESSORIES || ui.selected?.startsWith("acc_") == true
+    LaunchedEffect(controller, showAccessories) {
+        controller?.setAccessoriesVisible(showAccessories)
     }
 
     BackHandler(enabled = !ui.introDone || ui.detailsId != null || ui.selected != null || ui.area != null || ui.mode != GarageMode.GARAGE) {
@@ -580,10 +579,19 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
             ui.showBanner("Ride logged", "+${r.km.km()}")
         })
     }
-    if (bikeDialog) BikeInfoDialog(data.bike, onDismiss = { bikeDialog = false }, onSave = { b -> repo.update { it.copy(bike = b) } })
+    if (bikeDialog) {
+        BikeInfoDialog(data.bike, onDismiss = { bikeDialog = false }, onSave = { b ->
+            // the pre-Timeline estimate starts at the purchase date: rebuild it when that date changes
+            repo.update { d -> d.copy(bike = b).let { if (b.purchaseDate != d.bike.purchaseDate) it.withFreshEstimate() else it } }
+        })
+    }
     if (odoDialog) {
         OdometerDialog(odo, onDismiss = { odoDialog = false }) { total ->
-            repo.update { d -> d.copy(bike = d.bike.copy(startOdometerKm = total - d.rides.sumOf { it.km })) }
+            // a hand-corrected total replaces the pre-Timeline estimate, so later Timeline imports can't move it
+            repo.update { d ->
+                val rides = d.rides.filterNot { it.id.startsWith(ESTIMATE_PREFIX) }
+                d.copy(rides = rides, estimateBeforeTimeline = false, bike = d.bike.copy(startOdometerKm = total - rides.sumOf { it.km }))
+            }
             ui.showBanner("Odometer set", "${groupedKm(total)} km")
         }
     }
@@ -644,9 +652,11 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
         ConfirmDialog(
             "Import backup?", "This replaces everything currently in the app.", confirmLabel = "Import",
             onConfirm = {
-                repo.importFrom(uri)
-                    .onSuccess { ui.showBanner("Backup restored", "All data replaced") }
-                    .onFailure { ui.showBanner("Not a valid backup", "Nothing changed") }
+                scope.launch {
+                    withContext(Dispatchers.IO) { repo.importFrom(uri) }
+                        .onSuccess { ui.showBanner("Backup restored", "All data replaced") }
+                        .onFailure { ui.showBanner("Not a valid backup", "Nothing changed") }
+                }
             },
             onDismiss = { pendingImport = null },
         )

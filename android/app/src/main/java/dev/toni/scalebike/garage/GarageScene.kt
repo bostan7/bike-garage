@@ -65,6 +65,9 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
 
         private const val TAG = "GarageScene"
 
+        /** A part box centred further than this (m) towards -Z is on the non-drive side (bike centre plane is z = 0). */
+        private const val NON_DRIVE_SIDE_Z = 0.01
+
         /** Toni's accessories: node names in bike.glb and part slots (category Accessories); hideable as a group. */
         val ACCESSORY_SLOTS: Set<String> = setOf(
             "acc_mudguard_front", "acc_mudguard_rear", "acc_light_rear", "acc_light_front", "acc_light_clip",
@@ -819,10 +822,12 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
         val size = sqrt((maxX - minX).pow(2) + (maxY - minY).pow(2) + (maxZ - minZ).pow(2))
         val d = max(max(minD, size * k), T.MIN_DIST)
         val dl = sqrt(0.28 * 0.28 + 0.32 * 0.32 + 1.0)
+        // look from the side the parts are on: rotors, calipers, bell and front light sit on the left (-Z) side
+        val side = if (cz < -NON_DRIVE_SIDE_Z) -1.0 else 1.0
         toTarget[0] = cx; toTarget[1] = cy; toTarget[2] = cz
         toPos[0] = cx + 0.28 / dl * d
         toPos[1] = cy + 0.32 / dl * d
-        toPos[2] = cz + 1.0 / dl * d
+        toPos[2] = cz + side / dl * d
         startTween(0.0)
     }
 

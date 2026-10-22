@@ -11,6 +11,11 @@ import java.io.File
 
 /** Single source of truth. Data is small, so it's kept in memory and rewritten as one JSON file on every change. */
 class BikeRepository(private val context: Context) {
+    private companion object {
+        /** A real backup is ~50 KB; anything far bigger is some other file. */
+        const val MAX_BACKUP_BYTES = 8 * 1024 * 1024
+    }
+
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; prettyPrint = true }
     private val file = File(context.filesDir, "bike.json")
     private val photoDir = File(context.filesDir, "photos").apply { mkdirs() }
@@ -42,9 +47,24 @@ class BikeRepository(private val context: Context) {
         }
     }
 
+    /**
+     * Replaces all data with a backup made by [exportTo]. Any other JSON (e.g. a Timeline export) would decode to an
+     * empty BikeData, so files that are too big or have no parts / unfinished setup are rejected. Call off the main thread.
+     */
     fun importFrom(uri: Uri): Result<Unit> = runCatching {
-        val text = context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() }
-        val d = json.decodeFromString<BikeData>(text)
+        val bytes = context.contentResolver.openInputStream(uri)!!.use { input ->
+            val buf = java.io.ByteArrayOutputStream()
+            val chunk = ByteArray(64 * 1024)
+            while (true) {
+                val n = input.read(chunk)
+                if (n < 0) break
+                buf.write(chunk, 0, n)
+                require(buf.size() <= MAX_BACKUP_BYTES) { "Not a backup (file too big)" }
+            }
+            buf.toByteArray()
+        }
+        val d = json.decodeFromString<BikeData>(bytes.decodeToString())
+        require(d.setupDone && d.parts.isNotEmpty()) { "Not a backup" }
         _data.value = d
         persist(d)
     }

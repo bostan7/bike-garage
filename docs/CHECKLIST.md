@@ -21,6 +21,28 @@ Update this file after every work session.
 
 ---
 
+## 🐞 Bugs & fixes to do (code review 2026-10-22; 7 fixed same day. Checked on the phone: Timeline.json as backup → "Not a valid backup", nothing lost; front rotor now shown from the left side. Photo-cancel fix not phone-tested: the picker shows the private gallery)
+
+- ✅**Import backup accepts any JSON and wipes all data** (e.g. picking `Timeline.json` by mistake → empty data, setup screen). Check the file is a real backup before replacing — `data/BikeRepository.kt` `importFrom`
+- ✅**Backup import runs on the main thread** and reads the whole file into memory → freeze/crash on big files. Move to a background thread like the Timeline import — `ui/game/GameScreen.kt`
+- ✅**Issue photos:** ✕ deletes the photo file before Save (Cancel leaves a broken photo); photos added then cancelled stay as orphan files — `ui/Dialogs.kt` `IssueDialog`
+- ✅**Camera fly-to always looks from the drive side:** brake rotors/calipers, bell and front light (left side) are hidden behind the wheel when selected — `garage/GarageScene.kt` `boxView`
+- ✅**Odometer correction drifts after a Timeline re-import** (estimate rides are recomputed) — decide: stop estimating once the odometer was corrected — `data/TimelineImport.kt`
+- ✅**Changing the purchase date leaves the old estimate rides** until the next Timeline import — recompute on change
+- ✅**Opening the Accessories area turns the ACCESSORIES chip on permanently** (should only show them while looking) — `ui/game/GameScreen.kt`
+- 🔲 Optimisation (low): every data change rewrites `bike.json` on the main thread — fine now (~50 KB), move to a background writer if it grows
+- 🔲 Service log panel is a plain list; switch to a lazy list when there are hundreds of rides (now ~100 entries)
+
+## 🧾 Open decisions / real-bike to-dos
+
+- 🔲 26 alerts / condition 0 after counting 3 299 km: keep as to-do list, mark checked-OK parts, or log real services (Toni decides)
+- 🔲 Add the torn-saddle photo to its issue (Toni, in the app)
+- 🔲 **Rear derailleur hanger** check/replace after the fall; avoid the 51T cog until then (real bike)
+- 🔲 Delete `Timeline.json` from the PC, phone Downloads and the Telegram chat (privacy)
+- 🔲 GitHub: add description + topics (text ready)
+
+---
+
 ## Phase 0 — Planning & project setup
 
 - ✅ Pick the platform: native Android (Kotlin + Jetpack Compose), Pixel 9 Pro only
@@ -113,7 +135,6 @@ Update this file after every work session.
   - Neon glows in the UI reuse one paint + cached blur filters (no new blur every animated frame)
 - ✅ Accessories area in PARTS + ACCESSORIES chip in the HUD (hide/show the `acc_*` parts in 3D, remembered; opening the area shows them again). Checked on the phone
 - ✅ Odometer before Timeline: one estimated ride per month from the purchase date to the first Timeline day at the Timeline average (5.6 km/day → ~2 675 km), recomputed on every import
-- 🔲 Service log panel is a plain scrolling list; switch to a lazy list once there are many rides/services
 - ✅ Part details panel in the game UI (`ui/game/GameDetails.kt`, opened by DETAILS on the part card): maintenance progress bars, about + pros/cons, ownership, issues (tap = edit / resolve / photos), history (tap = edit), other parts in the same slot, notes, Edit part. Tapping another part on the bike switches the panel; Back closes it first
 - ✅ Moved the last old-page features into the game UI: costs + reset all data (BIKE), fit & setup notes (WORKSHOP)
 - ✅ Old 2D pages deleted (Home, Timeline, Tools, Garage, PartDetail) + their unused helpers; navigation-compose dependency removed. Setup screen kept for first launch

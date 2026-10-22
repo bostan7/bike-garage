@@ -245,18 +245,27 @@ fun IssueDialog(
     var resolution by remember { mutableStateOf(initial?.resolution.orEmpty()) }
     val photos = remember { mutableStateListOf<String>().apply { addAll(initial?.photos.orEmpty()) } }
     var viewing by remember { mutableStateOf<String?>(null) }
+    // photo files only change on Save: files added in this dialog are deleted on Cancel, removed ones on Save
+    val added = remember { mutableStateListOf<String>() }
+    val removed = remember { mutableStateListOf<String>() }
+    val cancel = {
+        added.forEach { repo.photoFile(it).delete() }
+        onDismiss()
+    }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(6)) { uris ->
         scope.launch {
             val names = withContext(Dispatchers.IO) { uris.mapNotNull { repo.savePhoto(it) } }
+            added.addAll(names)
             photos.addAll(names)
         }
     }
 
     FormDialog(
-        if (initial == null) "Report issue" else "Issue", onDismiss,
+        if (initial == null) "Report issue" else "Issue", cancel,
         saveEnabled = title.isNotBlank(),
         onSave = {
+            removed.forEach { repo.photoFile(it).delete() }
             onSave(
                 Issue(
                     id = initial?.id ?: newId(), partId = partId, date = date ?: Dates.today(), odoKm = odo.toNum() ?: currentOdo,
@@ -266,7 +275,7 @@ fun IssueDialog(
             )
             onDismiss()
         },
-        onDelete = onDelete,
+        onDelete = onDelete?.let { del -> { added.forEach { repo.photoFile(it).delete() }; del() } },
     ) {
         Field(title, { title = it }, "What's wrong? (e.g. creaking when pedalling)")
         Field(desc, { desc = it }, "Details", singleLine = false, minLines = 3)
@@ -287,7 +296,10 @@ fun IssueDialog(
                         Icons.Filled.Close, "Remove", tint = Color.White,
                         modifier = Modifier.align(Alignment.TopEnd).padding(3.dp).size(20.dp)
                             .clip(RoundedCornerShape(10.dp)).background(Color(0xAA000000))
-                            .clickable { photos.remove(name); repo.photoFile(name).delete() },
+                            .clickable {
+                                photos.remove(name)
+                                if (added.remove(name)) repo.photoFile(name).delete() else removed.add(name)
+                            },
                     )
                 }
             }

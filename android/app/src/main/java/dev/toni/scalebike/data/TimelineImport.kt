@@ -153,15 +153,24 @@ fun BikeRepository.applyTimeline(days: List<TimelineImport.Day>): TimelineMerge 
     val ids = rides.map { it.id }.toSet()
     var estimate = Estimate(emptyList(), 0.0)
     update { d ->
-        val merged = d.rides.filterNot { it.id in ids || it.id.startsWith(ESTIMATE_PREFIX) } + rides
-        estimate = estimateBeforeTimeline(merged.filter { it.id.startsWith(TimelineImport.ID_PREFIX) }, d.bike.purchaseDate)
-        d.copy(rides = merged + estimate.rides, lastTimelineImport = Dates.today())
+        val merged = d.copy(rides = d.rides.filterNot { it.id in ids } + rides, lastTimelineImport = Dates.today())
+        estimate = merged.estimate()
+        merged.copy(rides = merged.rides.filterNot { it.id.startsWith(ESTIMATE_PREFIX) } + estimate.rides)
     }
     val newDays = rides.count { it.id !in before }
     val updated = rides.count { r -> before[r.id]?.let { it.km != r.km } == true }
     val addedKm = rides.sumOf { it.km } - rides.sumOf { before[it.id]?.km ?: 0.0 }
     return TimelineMerge(newDays, updated, addedKm, estimate.rides.sumOf { it.km }, estimate.kmPerDay)
 }
+
+/** The estimate rides for this data: none once the odometer was corrected by hand ([BikeData.estimateBeforeTimeline]). */
+private fun BikeData.estimate(): Estimate =
+    if (!estimateBeforeTimeline) Estimate(emptyList(), 0.0)
+    else estimateBeforeTimeline(rides.filter { it.id.startsWith(TimelineImport.ID_PREFIX) }, bike.purchaseDate)
+
+/** Rebuilds the estimate rides after the purchase date or the estimate setting changed. */
+fun BikeData.withFreshEstimate(): BikeData =
+    copy(rides = rides.filterNot { it.id.startsWith(ESTIMATE_PREFIX) } + estimate().rides)
 
 private class Estimate(val rides: List<Ride>, val kmPerDay: Double)
 
