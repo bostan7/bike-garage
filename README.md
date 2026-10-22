@@ -226,7 +226,7 @@ More in [3d/README.md](3d/README.md): views, node contract, triangle budget, gar
 ```
 .
 ├── README.md            ← you are here
-├── LICENSE              ← MIT
+├── LICENSE              ← all rights reserved
 ├── android/             ← the app: Gradle project (Kotlin + Jetpack Compose + Filament)
 │   └── app/src/main/
 │       ├── java/dev/toni/scalebike/
@@ -282,6 +282,8 @@ The service intervals, torque values and tyre pressures in the app are general r
 
 ## License
 
-**MIT**. See [LICENSE](LICENSE).
+**© 2026 Antonie Bostan. All rights reserved.** See [LICENSE](LICENSE).
 
-Third-party assets keep their own licences: the fonts are SIL OFL 1.1, the garage HDR is CC0, and Google Filament and the other libraries are Apache-2.0 (see [Credits & licences](#credits--licences)). Brand names and logos reproduced in the 3D model (for example on decals and tyre sidewalls) belong to their owners and are not covered by the MIT licence.
+You are welcome to look at the code and learn from it, but you may not copy, modify, redistribute or reuse it (in whole or in part) without written permission. To ask, contact [@bostan7](https://github.com/bostan7).
+
+Third-party assets keep their own licences: the fonts are SIL OFL 1.1, the garage HDR is CC0, and Google Filament and the other libraries are Apache-2.0 (see [Credits & licences](#credits--licences)). Brand names and logos reproduced in the 3D model (for example on decals and tyre sidewalls) belong to their owners and are not covered by this notice.
