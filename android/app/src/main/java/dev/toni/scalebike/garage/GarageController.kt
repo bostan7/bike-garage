@@ -5,7 +5,7 @@ package dev.toni.scalebike.garage
  *
  * All touch handling lives in the UI: it decides what is an edge swipe (change mode), a drag (orbit),
  * a pinch (zoom) or a tap, and calls the matching method here. The garage never installs its own touch listener.
- * Part names are the 23 slot names shared with `SeedData` and `bike.glb` (see CLAUDE.md).
+ * Part names are the 23 slot names shared with `SeedData` and `bike.glb` (see "Part slots" in the root README.md).
  * Every method must be safe to call from the main thread at any time, also before the model has loaded
  * (calls made before loading are applied once it is ready).
  */
@@ -21,6 +21,9 @@ interface GarageController {
 
     /** Pulsing neon-yellow highlight on one part, or none. */
     fun setSelected(slot: String?)
+
+    /** Shows or hides every accessory (`acc_*` nodes: mudguards, lights, bell, lock, reflectors). */
+    fun setAccessoriesVisible(visible: Boolean)
 
     /** Status view: every part glows by its condition (green / amber / red); off = no glow. */
     fun setStatusView(enabled: Boolean, health: Map<String, PartHealth>)

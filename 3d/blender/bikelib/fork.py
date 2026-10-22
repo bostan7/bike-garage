@@ -3,6 +3,7 @@
 Crown and lowers are cast parts: their pieces are fused and smoothed into single shapes."""
 import math
 
+import bpy
 from mathutils import Vector
 
 from . import materials as M
@@ -169,4 +170,22 @@ def build_headset(coll):
     mk.place(capm.bm, S.on_axis(top), S.AXIS_FWD, S.AXIS_UP, -Y)
     part.add_bm(capm.bm, black, free=False)
     mk.cyl(part, S.on_axis(top - 5.5), S.on_axis(top - 7.0), 0.0050, M.get("steel"), n=12)
+    # Cane Creek top cap (Toni's photo): white CANE CREEK twice around the rim, small lizard marks between
+    face = S.on_axis(top) + S.AXIS_UP * 0.00565
+    probe = mk._text_mesh("CANE CREEK", 1.0, 0.0, "C:/Windows/Fonts/arialbd.ttf")
+    ys = [v.co.y for v in probe.vertices]
+    bpy.data.meshes.remove(probe)
+    sc = 0.0024 / (max(ys) - min(ys))
+    r0 = 0.0112
+    for a0 in (math.radians(90.0), math.radians(270.0)):
+        def ring_text(v, a0=a0):
+            th = a0 - (v.x * sc) / r0
+            r = r0 + v.y * sc
+            return face + S.AXIS_FWD * (r * math.cos(th)) + Y * (r * math.sin(th))
+        mk.add_text(part, "CANE CREEK", 1.0, 0.0, M.get("tyre_text"), ring_text, "C:/Windows/Fonts/arialbd.ttf")
+    for a in (0.0, 180.0):
+        th = math.radians(a)
+        c = face + S.AXIS_FWD * (r0 * math.cos(th)) + Y * (r0 * math.sin(th))
+        tang = (S.AXIS_FWD * -math.sin(th) + Y * math.cos(th))
+        mk.ellipsoid(part, c, (0.0022, 0.0007, 0.0002), M.get("tyre_text"), rot=mk.basis(tang, S.AXIS_UP), segs=8, rings=4)
     return part.finish(coll)

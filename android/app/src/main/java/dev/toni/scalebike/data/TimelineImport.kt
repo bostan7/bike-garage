@@ -5,7 +5,9 @@ import android.util.JsonToken
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.time.Duration
+import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import java.util.TreeMap
 
@@ -126,12 +128,17 @@ object TimelineImport {
     }
 }
 
-/** What an import changed, for the banner. */
-data class TimelineMerge(val newDays: Int, val updatedDays: Int, val km: Double)
+/** What an import changed, for the banner; [estimateKm] = km estimated for the time before Timeline. */
+data class TimelineMerge(val newDays: Int, val updatedDays: Int, val km: Double, val estimateKm: Double, val kmPerDay: Double)
+
+/** Ride ids of the estimated months before Timeline started recording (`estimate-yyyy-MM`). */
+const val ESTIMATE_PREFIX = "estimate-"
 
 /**
  * Puts the imported days into the rides: one ride per day (`timeline-yyyy-MM-dd`); a day imported before is
- * replaced by the new total, hand-logged rides stay as they are.
+ * replaced by the new total, hand-logged rides stay as they are. Timeline only records from when it was switched
+ * on (Toni's: 22 Jun 2026), so the time from the purchase date until then is filled with one estimated ride per
+ * month at the Timeline average km/day; the estimate is recomputed on every import (Toni, 2026-10-18).
  */
 fun BikeRepository.applyTimeline(days: List<TimelineImport.Day>): TimelineMerge {
     val before = data.value.rides.filter { it.id.startsWith(TimelineImport.ID_PREFIX) }.associateBy { it.id }
@@ -144,9 +151,43 @@ fun BikeRepository.applyTimeline(days: List<TimelineImport.Day>): TimelineMerge 
         )
     }
     val ids = rides.map { it.id }.toSet()
-    update { d -> d.copy(rides = d.rides.filterNot { it.id in ids } + rides, lastTimelineImport = Dates.today()) }
+    var estimate = Estimate(emptyList(), 0.0)
+    update { d ->
+        val merged = d.rides.filterNot { it.id in ids || it.id.startsWith(ESTIMATE_PREFIX) } + rides
+        estimate = estimateBeforeTimeline(merged.filter { it.id.startsWith(TimelineImport.ID_PREFIX) }, d.bike.purchaseDate)
+        d.copy(rides = merged + estimate.rides, lastTimelineImport = Dates.today())
+    }
     val newDays = rides.count { it.id !in before }
     val updated = rides.count { r -> before[r.id]?.let { it.km != r.km } == true }
     val addedKm = rides.sumOf { it.km } - rides.sumOf { before[it.id]?.km ?: 0.0 }
-    return TimelineMerge(newDays, updated, addedKm)
+    return TimelineMerge(newDays, updated, addedKm, estimate.rides.sumOf { it.km }, estimate.kmPerDay)
+}
+
+private class Estimate(val rides: List<Ride>, val kmPerDay: Double)
+
+/**
+ * One ride per calendar month from [purchaseDate] up to the day before the first Timeline day, each worth
+ * (Timeline km / Timeline days) × the days of that month in the gap. Empty without a purchase date or Timeline rides.
+ */
+private fun estimateBeforeTimeline(timeline: List<Ride>, purchaseDate: String?): Estimate {
+    val start = purchaseDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+    if (timeline.isEmpty() || start == null) return Estimate(emptyList(), 0.0)
+    val dates = timeline.map { LocalDate.parse(it.date) }
+    val first = dates.min()
+    val perDay = timeline.sumOf { it.km } / (ChronoUnit.DAYS.between(first, dates.max()) + 1)
+    val out = mutableListOf<Ride>()
+    var day: LocalDate = start
+    while (day.isBefore(first)) {
+        val monthEnd = day.withDayOfMonth(day.lengthOfMonth())
+        val end = if (monthEnd.isBefore(first)) monthEnd else first.minusDays(1)
+        val n = ChronoUnit.DAYS.between(day, end) + 1
+        out += Ride(
+            id = ESTIMATE_PREFIX + day.toString().substring(0, 7),
+            date = end.toString(),
+            km = Math.round(perDay * n * 10) / 10.0,
+            note = "Estimate · ${String.format(Locale.UK, "%.1f", perDay)} km/day × $n days (before Timeline)",
+        )
+        day = end.plusDays(1)
+    }
+    return Estimate(out, perDay)
 }

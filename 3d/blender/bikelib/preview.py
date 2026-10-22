@@ -6,6 +6,7 @@ import os
 import bpy
 from mathutils import Vector
 
+from . import cockpit as C
 from . import spec as S
 
 # Studio photo: rear axle at pixel (413, 1145), 1041.5 px per metre... per mm: 1.0415
@@ -119,11 +120,30 @@ def render_views(out_dir, views=None):
                             # pass 5 close-ups: saddle from behind/above-left, drive-side pedal
                             ("saddle_close", tuple(S.on_seat_axis(S.SADDLE_HEIGHT) + Vector((-0.38, 0.30, 0.22))),
                              (1400, 1000)),
-                            ("pedal_close", tuple(S.BB + Vector((0.42, -0.42, 0.10))), (1400, 1000))):
+                            ("pedal_close", tuple(S.BB + Vector((0.42, -0.42, 0.10))), (1400, 1000)),
+                            # accessories (2026-10-18): cockpit from behind-left (bell, lights, SCALE on the
+                            # top tube), seat area from behind-right (saddle, rear mudguard, M light), drivetrain
+                            # from the drive side (pedal, derailleur, lock)
+                            ("acc_cockpit", tuple(C.bar_center() + Vector((-0.50, 0.30, 0.38))), (1400, 1000)),
+                            ("acc_seat", tuple(S.on_seat_axis(S.SADDLE_HEIGHT) + Vector((-0.85, -0.72, 0.30))),
+                             (1400, 1000)),
+                            ("acc_drivetrain", tuple(S.BB + Vector((0.10, -0.95, 0.30))), (1400, 1000)),
+                            # accessories v2 (2026-10-22): Toni's drive-side photo angle, close-ups of the lock,
+                            # Mud-X, reflectors and M light, the bar from the saddle (Toni's top photo)
+                            ("acc_photo", (0.25, -2.05, 1.45), (1600, 1200)),
+                            ("acc_lock", tuple(S.BB + Vector((0.36, -0.58, 0.24))), (1400, 1000)),
+                            ("acc_mudfront", tuple(S.BB + Vector((0.62, -0.55, 0.62))), (1400, 1000)),
+                            ("acc_reflector", tuple(S.FRONT_AXLE + Vector((0.05, -0.80, 0.12))), (1400, 1000)),
+                            ("acc_mlight", tuple(S.on_seat_axis(S.SEAT_TUBE + 140) + Vector((-0.26, -0.24, 0.06))),
+                             (1400, 1000)),
+                            ("acc_bar_top", tuple(S.on_seat_axis(S.SADDLE_HEIGHT) + Vector((0.10, -0.06, 0.42))),
+                             (1000, 1400))):
         lens = {"cockpit": 50, "drivetrain": 50, "wheel_close": 50, "tyre_close": 50, "tread_front": 135,
                 "tyre_logo": 60, "cassette_side": 120, "crank_side": 110, "head_close": 60, "fork_close": 55,
                 "seat_close": 70, "lever_close": 55, "caliper_front": 60, "caliper_rear": 60, "saddle_close": 60,
-                "pedal_close": 60}.get(name, 70)
+                "pedal_close": 60, "acc_cockpit": 35, "acc_seat": 45, "acc_drivetrain": 32, "acc_photo": 40,
+                "acc_lock": 45, "acc_mudfront": 50, "acc_reflector": 45, "acc_mlight": 55,
+                "acc_bar_top": 26}.get(name, 70)
         cam = _camera(scene, "cam_" + name, loc, (0, 0, 0), lens=lens)
         target = {"cockpit": (0.52, 0.0, 1.02), "drivetrain": (-0.2, 0.0, 0.33),
                   "wheel_close": tuple(S.FRONT_AXLE), "tyre_close": (S.FRONT_AXLE.x + 0.30, -0.02, S.FRONT_AXLE.z + 0.17),
@@ -136,7 +156,16 @@ def render_views(out_dir, views=None):
                   "caliper_front": tuple(S.FRONT_AXLE + Vector((-0.07, 0.05, 0.035))),
                   "caliper_rear": tuple(S.REAR_AXLE + Vector((0.065, 0.05, 0.04))),
                   "saddle_close": tuple(S.on_seat_axis(S.SADDLE_HEIGHT) + Vector((0.0, 0.0, -0.02))),
-                  "pedal_close": tuple(S.BB + Vector((0.17, -0.12, -0.02)))}.get(name, centre)
+                  "pedal_close": tuple(S.BB + Vector((0.17, -0.12, -0.02))),
+                  "acc_cockpit": tuple(C.bar_center() + Vector((-0.16, 0.0, -0.10))),
+                  "acc_seat": tuple(S.on_seat_axis(S.SADDLE_HEIGHT) + Vector((-0.24, 0.0, -0.13))),
+                  "acc_drivetrain": tuple(S.BB + Vector((-0.14, 0.0, -0.01))),
+                  "acc_photo": (0.15, 0.0, 0.58),
+                  "acc_lock": tuple(S.BB + Vector((0.15, -0.04, 0.07))),
+                  "acc_mudfront": tuple(S.BB + Vector((0.33, -0.03, 0.31))),
+                  "acc_reflector": tuple(S.FRONT_AXLE + Vector((0.0, -0.02, 0.0))),
+                  "acc_mlight": tuple(S.on_seat_axis(S.SEAT_TUBE + 125)),
+                  "acc_bar_top": tuple(C.bar_center() + Vector((-0.02, 0.0, -0.30)))}.get(name, centre)
         _look_at(cam, target)
         all_views[name] = (cam, size)
 

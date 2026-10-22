@@ -50,9 +50,9 @@ def _sleeve(part, tube, s0, s1, a0, a1, mat, lift=0.0015, steps=40, arc_steps=24
 
 
 def _text_on_tube(part, tube, text, s_center, angle_center, height, length, side, mat, reverse=False, lift=0.0015,
-                  italic=0.0, extrude=0.0):
+                  italic=0.0, extrude=0.0, font=mk.FONT_PATH, space=1.0):
     """Wrap text onto a tube side. side = -1 drive side (-Y), +1 non-drive side (+Y), 0 = on top (+n)."""
-    probe = mk._text_mesh(text, 1.0, 0.0)
+    probe = mk._text_mesh(text, 1.0, 0.0, font, space=space)
     xs = [v.co.x for v in probe.vertices]
     ys = [v.co.y for v in probe.vertices]
     bpy.data.meshes.remove(probe)
@@ -67,7 +67,7 @@ def _text_on_tube(part, tube, text, s_center, angle_center, height, length, side
         r = (w + h) * 0.5
         ang = angle_center - turn * (v.y * sy) / r          # letter "up" towards the top of the tube
         return tube.surface(along, ang, lift + v.z * 0.0003)
-    return mk.add_text(part, text, 1.0, extrude, mat, xform)
+    return mk.add_text(part, text, 1.0, extrude, mat, xform, font, space=space)
 
 
 # ----------------------------------------------------------------------------------- geometry
@@ -250,8 +250,11 @@ def build(coll):
     _text_on_tube(layer(black), top, "SCOTT", 0.82, math.radians(-68), 0.016, 0.115, -1, black, italic=0.35)
     _text_on_tube(layer(black), top, "SCOTT", 0.82, math.radians(68), 0.016, 0.115, 1, black, reverse=True,
                   italic=0.35)
-    _sleeve(layer(black), top, 0.52, 0.93, math.radians(-38), math.radians(38), black)
-    _text_on_tube(layer(yellow), top, "SCALE", 0.80, 0.0, 0.0085, 0.052, 0, yellow, italic=0.25)
+    # Toni's photos (2026-10-18): glossy black band along the whole top of the top tube, SCALE in thin, wide-spaced
+    # neon capitals (the A has no crossbar), reading from the seat towards the head tube, letter tops to the left
+    _sleeve(layer(black), top, 0.05, 0.95, math.radians(-42), math.radians(42), black, steps=60)
+    _text_on_tube(layer(yellow), top, "SC\u039bLE", 0.79, 0.0, 0.0105, 0.088, 0, yellow,
+                  font="C:/Windows/Fonts/segoeuil.ttf", space=1.9)
     # chainstay protector (drive side)
     cs = StraightTube(S.P(-40, 10, -36), S.P(-330, 47, -63), [(0.0, (0.0100, 0.0160)), (1.0, (0.0080, 0.0110))])
     _sleeve(layer(black), cs, 0.05, 0.95, math.radians(-150), math.radians(10), black, lift=0.0022)

@@ -47,6 +47,8 @@ enum class Category(val label: String) {
     DRIVETRAIN("Drivetrain"),
     WHEELS("Wheels & tyres"),
     CONTACT("Saddle & seatpost"),
+    /** Mudguards, lights, bell, lock, reflectors: `acc_*` slots, can be hidden in 3D (Toni, 2026-10-18). */
+    ACCESSORIES("Accessories"),
 }
 
 @Serializable

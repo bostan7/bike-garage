@@ -3,7 +3,7 @@
   python 3d/viewer/make_viewer.py OUT.html              # single file, model embedded
   python 3d/viewer/make_viewer.py OUT.html --external   # model written next to the page as base64 text
                                                         # chunks bike-glb-N.txt (for models too big to embed;
-                                                        # artifacts serve .txt but not .glb)
+                                                        # static hosts that serve .txt but not .glb)
 """
 import base64
 import json

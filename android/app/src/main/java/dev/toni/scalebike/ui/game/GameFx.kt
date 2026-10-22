@@ -57,6 +57,16 @@ class GameFx(context: Context, private val view: View) {
         Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
     }.getOrDefault(false)
 
+    /** ACCESSORIES chip: show the mudguards, lights, lock… on the 3D bike (remembered like SOUND). */
+    var accessoriesOn by mutableStateOf(prefs.getBoolean(KEY_ACCESSORIES, true))
+        private set
+
+    fun toggleAccessories() {
+        accessoriesOn = !accessoriesOn
+        prefs.edit().putBoolean(KEY_ACCESSORIES, accessoriesOn).apply()
+        tick()
+    }
+
     fun toggleSound() {
         soundOn = !soundOn
         prefs.edit().putBoolean(KEY_SOUND, soundOn).apply()
@@ -114,6 +124,7 @@ class GameFx(context: Context, private val view: View) {
 
     private companion object {
         const val KEY_SOUND = "sound_on"
+        const val KEY_ACCESSORIES = "accessories_on"
     }
 }
 

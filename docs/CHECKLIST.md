@@ -15,7 +15,8 @@ Update this file after every work session.
 |---|---|---|
 | Toni's scratches + accessories (mudguard, small saddle bag, bell, light, Kryptonite chain lock) | Toni: photos when he has access to the bike | Adding them to the model (built stock for now) |
 | Stem length, crank length, fork decal | Toni: left open for now (2026-10-18). Stem: printed on its side; crank: stamped inside the arm; fork: decal on the lower leg | Small details (built 75 mm stem, 175 mm cranks, XCR 32) |
-| Plan for the photo findings (data updates, 3D accessories with an on/off button, model fixes) | Toni's OK on the plan | Updating parts, issues and the 3D model |
+| Clean-up of the 26 alerts (most parts never serviced in ~3 300 km) | Toni: keep as to-do list, mark checked-OK parts, or tell which parts were serviced | Useful condition score |
+| Saddle photo on the torn-nose issue | Toni adds it himself (the photo picker opens his private gallery) | — |
 | Checks on the real bike | Toni: [BIKE-SPECS.md → Measure on the real bike](BIKE-SPECS.md#measure-on-the-real-bike-) (fork decal XCR32/X1, stem length, **crank length: Toni thinks 175 mm, to check (stamped inside the arm)**, **fork decal XCR 32 or X1 32 (Toni: don't know yet)**, valve type Presta/Schrader…) | Small details only |
 
 ---
@@ -36,8 +37,8 @@ Update this file after every work session.
 - ✅ 2D prototype screens (throwaway): bike drawing, part details, timeline, tools, garage. Tested on the emulator
 - ✅ Organize the folder (docs / photos / 3d / android)
 - ✅ Set up git version control (photos are kept out of git)
-- ✅ Write `CLAUDE.md` (project rules, commands, architecture)
-- ✅ Pixel 9 Pro connected with USB debugging (serial `<device-serial>`)
+- ✅ Write the project notes (rules, commands, architecture)
+- ✅ Pixel 9 Pro connected with USB debugging
 - ✅ Blender 5.2 LTS found at `D:\Programs\Blender Foundation\Blender 5.2`
 - ✅ Blender MCP add-on v1.8 installed (telemetry and 3rd-party asset/AI options off), registered in `.mcp.json`, tested (built a test wheel and read a viewport screenshot)
 
@@ -71,7 +72,7 @@ Update this file after every work session.
 - ✅ Every part named exactly like the app's slots (23/23 checked against `SeedData.kt`), origins on rotation axes
 - ✅ Exported `3d/models/bike.glb`: 4.5 MB, ~136k triangles (target was < 10 MB)
 - ✅ Compared with the official side photo by overlay. Wheels, frame, fork angle, saddle height and chainring line up
-- ✅ Interactive review page (rotate, zoom, tap a part): (local page)
+- ✅ Interactive review page (rotate, zoom, tap a part): local review viewer (`3d/viewer/`)
 - ✅ **Model v2 (more detail, requested by Toni):** fused/welded frame with gusset and weld fillets, cast fork crown + lowers, shaped tyre knobs (150 rows), real sprocket teeth, windowed cassette cogs on a spider, drilled rotors, spoke J-bends, valve, detailed levers/calipers/stem/shifter/grips, platform pedals with pins; ~330k triangles, 9.8 MB
 - 🔲 Toni reviews model v2
 - 🔲 **Model v3 (~580k triangles, requested by Toni):** plan made 2026-10-05 (per-part budget + what to add). Toni approved the ~580k budget; maybe higher later for some parts only (so the detail setting should work per part). Tyres in v3 = Toni's Rekon Race **29×2.35** (not stock 2.25); wheels confirmed stock.
@@ -82,7 +83,8 @@ Update this file after every work session.
   - ✅ Pass 3: frame and fork. Toni: fork decal unknown (keep XCR 32), scratches + mudguard + saddle bag later, **seat clamp is quick-release**. Rendered on "render" and compared with SCOTT's side photo: head tube re-shaped (smooth taper, no crease), one rippled TIG seam down each side of the head tube (snapped onto the welded surface), down-tube flare spread out, fork decals (SR SUNTOUR low + bold grey slashes, XCR 32 left leg), lighter smoothing on the fork lowers (measured 38–43 mm, matches the photo), QR lever on the drive side. Frame 95k, fork 61.5k, total 507k. Viewer republished
   - ✅ Pass 4: brakes and cockpit. Toni: brakes + rotors stock, stem length unknown (keep 75 mm), **grips changed to black WTB lock-on (clamps both ends)**, bell/light/Kryptonite lock later. References: Shimano MT200 / SM-RT10 / SL-M6100 + WTB grip photos, SCOTT 360° frames (front + non-drive side). Rendered on "render" (Toni: budget is a guide, more triangles are fine when needed): BL-MT200 lever (body along the bar, SHIMANO, hinged clamp, short pivot, flat hooked blade), BR-MT200 caliper (rounded halves, big piston boss, SHIMANO, banjo, bleed nipple) with the post-mount adapter moved radially outside (it covered the caliper) and radial bolts, SM-RT10 black 6-arm spider with rivets, WTB waffle grips with 2 clamp rings, 2-bolt stem faceplate, 12s on the shifter. Total 524k. Viewer republished
   - ✅ Pass 5: saddle, seatpost, pedals. Toni: saddle changed (bigger, softer; photos later), pedals = silver two-sided trekking pedals (model later), seatpost stock, Toni is 181 cm → saddle height 742 mm. References: Wellgo B087 / MKS pedals, WTB Comfort Wide / Selle Royal saddles. Rendered on "render": comfort saddle (172 mm wide, thick padding, relief groove, post head lowered 20 mm) reads right; pedals rebuilt as an open four-wall frame (the first version looked filled) with axle body, thin ribs, pins, amber reflectors. Total 525k, viewer republished. **Model v3 (all 5 passes) done.**
-- ⛔ Add Toni's modifications + check details against own photos (stem length, crank length, fork decal, grips)
+- ✅ Toni's modifications from his photos (2026-10-18): 8 accessories as `acc_*` nodes (front MudX + rear Polisport mudguards, McDonald's M rear light, square front light, yellow clip light, bell, Kryptonite U-lock, spoke reflectors), neon SCALE top tube, purple DEORE, Giant Flipside pedals, hydrofoam saddle, Cane Creek top cap. 558k triangles, phone glb 2.44 MB. Renders compared with the photos, installed on the phone
+- ⛔ Stem length, crank length, fork decal (Toni: left open)
 - 🔲 Polish later: derailleur body shape, optional Draco compression for the app
 
 ## Phase 2 — 3D garage scene in the app
@@ -91,9 +93,9 @@ Update this file after every work session.
 - ✅ Phone model: Draco-compressed bike.glb in the app assets (16.3 → 2.27 MB, 23 parts; `build_bike.py --glb-draco`)
 - ✅ 3D engine: **plain Google Filament 1.75.1** instead of SceneView (SceneView 4.x and Filament ≥ 1.76 need Kotlin 2.4; ours is 2.2.20; fewer dependencies). Garage IBL made on the phone from the CC0 `parking_garage` HDR (1k, 1.6 MB). `garage/GarageRenderer.kt` + `Garage3D.kt`; home route shows the 3D garage. `assembleDebug` OK
 - ✅ First phone test (Pixel 9 Pro, Mali-G715, GLES 3.2): bike renders, drag/pinch work, cold start ~0.7 s. Fixed a native crash on leaving the screen (ModelViewer frees itself on detach; our objects now go first)
-- ✅ **Design change (Toni): game garage UI** (NFS look + GTA camera), **landscape**, panels over the garage, no bottom bar; extras: sounds, vibration, condition badge, intro. Plan updated (PLAN.md 5b, 12 steps), CLAUDE.md conventions updated
+- ✅ **Design change (Toni): game garage UI** (NFS look + GTA camera), **landscape**, panels over the garage, no bottom bar; extras: sounds, vibration, condition badge, intro. Plan updated (PLAN.md 5b, 12 steps), project conventions updated
 - ✅ Step 3: landscape (sensorLandscape) + immersive full-screen, Material bottom bar removed; temporary text menu on the right (PARTS (2D) · SERVICE LOG · WORKSHOP · BIKE) keeps the old pages reachable until step 7. Installed on the Pixel, opens sideways, no crash. Still to check: old pages in landscape + Back (phone locked during the test)
-- ✅ **Design change (Toni, 2026-10-10): game controls.** Swipe modes from the screen edges (`SERVICE LOG · GARAGE · PARTS · WORKSHOP · BIKE`), drag = rotate, tap part = fly-to, hold-to-confirm. Design first as a clickable prototype (`design/prototype/`, (local page)) instead of Figma (Starter plan limits)
+- ✅ **Design change (Toni, 2026-10-10): game controls.** Swipe modes from the screen edges (`SERVICE LOG · GARAGE · PARTS · WORKSHOP · BIKE`), drag = rotate, tap part = fly-to, hold-to-confirm. Design first as a clickable prototype (local clickable prototype page, `design/prototype/`) instead of Figma (Starter plan limits)
 - ✅ Toni tested prototype v2: "way better, more NFS than GTA", must look like a garage → approved direction
 - ✅ Garage environment in Blender: `3d/blender/build_garage.py` + `garagelib/` → `3d/models/garage.glb` and Draco `assets/garage.glb` (0.30 MB, ~31k tris): wet concrete floor, block walls, roll-up shutter, workbench/props, turntable + neon ring, neon strips, hex LED ceiling, SCALE 980 sign
 - ✅ Step 4–5: Filament garage scene (`garage/GarageScene.kt`, `GarageTuning.kt`, `GarageController.kt`): spotlights + VSM shadow, IBL, SSR floor, bloom, fog, vignette, turntable, idle spin, intro (lights on one by one + camera sweep), mode camera presets, area/part fly-to, camera shift beside panels
@@ -109,6 +111,8 @@ Update this file after every work session.
   - Idle spin / highlight pulse: 60 → **30 fps with fixed presentation time** (evenly 33.3 ms, CPU 120 % → 76 %, less heat = no throttling)
   - **Optimized release build** (R8 + resource shrinking, signed with the debug key, `./gradlew installRelease`): UI frame median 8 → 5 ms, slow UI-thread frames halved, APK 99 → 38 MB, start 0.23 s
   - Neon glows in the UI reuse one paint + cached blur filters (no new blur every animated frame)
+- ✅ Accessories area in PARTS + ACCESSORIES chip in the HUD (hide/show the `acc_*` parts in 3D, remembered; opening the area shows them again). Checked on the phone
+- ✅ Odometer before Timeline: one estimated ride per month from the purchase date to the first Timeline day at the Timeline average (5.6 km/day → ~2 675 km), recomputed on every import
 - 🔲 Service log panel is a plain scrolling list; switch to a lazy list once there are many rides/services
 - ✅ Part details panel in the game UI (`ui/game/GameDetails.kt`, opened by DETAILS on the part card): maintenance progress bars, about + pros/cons, ownership, issues (tap = edit / resolve / photos), history (tap = edit), other parts in the same slot, notes, Edit part. Tapping another part on the bike switches the panel; Back closes it first
 - ✅ Moved the last old-page features into the game UI: costs + reset all data (BIKE), fit & setup notes (WORKSHOP)
@@ -149,7 +153,7 @@ Built 2026-10-11 as the game-UI details panel (`ui/game/GameDetails.kt`) + part 
 ## Phase 6 — Polish & install
 
 - 🔲 First-launch setup (purchase date, current km)
-- ✅ App icon and splash screen (2026-10-11): neon-yellow slab with "980" cut out (Barlow Condensed Black Italic outlines) + speed trail on near-black, themed monochrome icon for Android 13+, dark start screen with the slab + GARAGE. Vector only (`res/drawable/ic_launcher_*`, `splash_icon.xml`, theme `windowSplashScreenAnimatedIcon`). Previews made with a scratchpad script; splash checked on the phone (screen recording)
+- ✅ App icon and splash screen (2026-10-11): neon-yellow slab with "980" cut out (Barlow Condensed Black Italic outlines) + speed trail on near-black, themed monochrome icon for Android 13+, dark start screen with the slab + GARAGE. Vector only (`res/drawable/ic_launcher_*`, `splash_icon.xml`, theme `windowSplashScreenAnimatedIcon`). Previews made with a throwaway script; splash checked on the phone (screen recording)
 - 🔲 Test everything on the real Pixel 9 Pro
 - 🔲 Install the final version on the phone
 
@@ -189,15 +193,17 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 
 | Date | What was done |
 |---|---|
+| 2026-10-22 | Accessories v2: all 8 rebuilt from online product photos (SKS Mud-X, Polisport Cross Country EVO, Kryptonite Evolution + FlexFrame bracket, B+M/Contec reflectors, Knog Frog-style clip light, 55 mm bell, traced McDonald's M) and Toni's photos; clash-checked; 578k triangles, phone glb 2.53 MB. Repo prepared for the public GitHub repo (bostan7/bike-garage): README with screenshots + 4 demo GIFs recorded on the phone, MIT licence, private notes and phone serial removed, history cleaned before the first push. |
+| 2026-10-18 | Built A + B (Toni's OK): data update applied on the phone through backup export → script → import (original kept outside the repo): Giant Flipside pedals + hydrofoam saddle as replacements, 3 issues (shifting after fall, torn saddle nose, front caliper), Cane Creek repair, chain/cassette service 18 Jul, 8 accessories, setup baseline checks removed. Timeline re-import added the pre-Timeline estimate → odometer 3 299 km, 26 alerts (decision pending). 3D accessories + photo fixes built, renders checked, installed. |
 | 2026-10-18 | Toni sent 20 photos (saved in `photos/`, not in git) + answers: pedals Giant Flipside Commuter (flat side only), saddle = hydrofoam comfort saddle (from a Kettler bike, nose torn), headset top cap + star nut replaced by Cane Creek (star nut broke), fell on the drive side → big shifting problems now, brake pads never changed (front caliper slightly misaligned), chain cleaned + lubed ~3 months ago, rear light = McDonald's "M" light, rear mudguard Polisport Cross Country EVO; wants accessories in 3D with an on/off button. Timeline data only starts 22 Jun 2026. Timeline import committed. |
 | 2026-10-11 | Timeline ride import built and tested on the phone (624 km). |
-| 2026-10-11 | Phone not connected: built the part details panel (Phase 4 in the game UI), moved costs / reset / fit notes into BIKE and WORKSHOP, deleted the old 2D pages + navigation dependency, new app icon + splash (worker, previews checked). Checked on the phone; fixed a start-up grey flash and the cramped details panel. |
-| 2026-10-11 | Performance pass (Toni's OK, tracked in savvy-progress): measured every 3D effect on the phone; cheaper SSR, no MSAA, PCF shadows, 120 Hz while touching, no redraw when still, 30 fps evenly paced idle spin, optimized R8 release build, cached UI glows. Dragging 28–41 → ~90 fps, idle CPU ~100 % → ~7 %. |
-| 2026-10-11 | Phase 2 built (with Toni's OK, workers tracked in savvy-progress): garage glb, Filament garage engine, NFS game UI, integrated in `BikeApp`, installed on the Pixel. Phone test: intro, HUD, edge swipe, areas, part tap → card all work. Fixed lighting haze, framing (also beside the menus), glow strength, card layout, subtitle overlap, back-gesture conflict; re-checked on the phone with screenshots. |
+| 2026-10-11 | Phone not connected: built the part details panel (Phase 4 in the game UI), moved costs / reset / fit notes into BIKE and WORKSHOP, deleted the old 2D pages + navigation dependency, new app icon + splash (previews checked). Checked on the phone; fixed a start-up grey flash and the cramped details panel. |
+| 2026-10-11 | Performance pass (Toni's OK): measured every 3D effect on the phone; cheaper SSR, no MSAA, PCF shadows, 120 Hz while touching, no redraw when still, 30 fps evenly paced idle spin, optimized R8 release build, cached UI glows. Dragging 28–41 → ~90 fps, idle CPU ~100 % → ~7 %. |
+| 2026-10-11 | Phase 2 built (with Toni's OK): garage glb, Filament garage engine, NFS game UI, integrated in `BikeApp`, installed on the Pixel. Phone test: intro, HUD, edge swipe, areas, part tap → card all work. Fixed lighting haze, framing (also beside the menus), glow strength, card layout, subtitle overlap, back-gesture conflict; re-checked on the phone with screenshots. |
 | 2026-10-10 | Prototype v2 (Toni: "way better, more NFS than GTA, must look like a garage"): real garage built in 3D (wet reflective concrete floor, block walls, roll-up shutter, pegboard, workbench, tool chest, tyre stack, hexagon LED ceiling, neon strips + SCALE 980 sign, light cone, dust) and NFS-style UI (italic menu lists with neon slab, segmented stat bars, speed-stripe wipe, banners, control prompts). |
 | 2026-10-10 | Game controls decided (edge-swipe modes, drag = rotate). Clickable prototype v1 built with the real 3D bike and published for testing on the phone. |
 | 2026-10-05 | Step 3 built + installed: landscape, full-screen, no bottom bar, temporary side menu. Page/Back test still to do (phone locked). Next: step 4 dark garage. |
-| 2026-10-05 | First phone test OK after fixing a detach crash. Toni: the app must look like a game garage (NFS + GTA camera), landscape, panels over the garage, sounds/vibration/badge/intro. Plan and CLAUDE.md updated. |
+| 2026-10-05 | First phone test OK after fixing a detach crash. Toni: the app must look like a game garage (NFS + GTA camera), landscape, panels over the garage, sounds/vibration/badge/intro. Plan and project notes updated. |
 | 2026-10-05 | Phase 2 build started (Toni's OK): Draco phone model, Filament 1.75.1 (plan change from SceneView, Kotlin compatibility), garage HDR lighting, 3D garage as home; debug APK builds. Phone install blocked: adb unauthorized. |
 | 2026-10-05 | Pass 5 committed (92cdd7f), model v3 complete. Phase 2 started with questions: all 8 answered; Phase 2 plan written in PLAN.md (section 5b). No code yet. |
 | 2026-10-05 | Pass 5 rendered on Toni's request (saddle, pedal close-ups): pedals rebuilt as an open frame; exported and viewer republished. Model v3 complete (525k). |
@@ -214,5 +220,5 @@ Save into the matching folder in `photos/`. Daylight or even light, no harsh sun
 | 2026-10-05 | Model v2: much more detailed mesh (fused welded frame, cast fork, shaped tread, real sprocket teeth, drilled rotors, detailed controls). Viewer updated to v2. |
 | 2026-10-02 | Phase 1: official references downloaded; Blender generator written; 3D model v1 built, checked against SCOTT's photo, exported to `3d/models/bike.glb` (23 named parts). |
 | 2026-10-02 | Online research: identified the exact bike (article 280483, Dark Grey), official spec + geometry, 3D coordinates, per-part research, official 360° video found. Docs: BIKE-SPECS.md rewritten, research/COMPONENTS.md, research/SOURCES.md. |
-| 2026-10-02 | Git set up, `CLAUDE.md` written. Phone connected. Blender 5.2 found. Blender MCP installed and tested. |
+| 2026-10-02 | Git set up, project notes written. Phone connected. Blender 5.2 found. Blender MCP installed and tested. |
 | 2026-10-01 | Plan written. Stock spec researched. Android project, data layer and 2D prototype built (prototype UI will be replaced). Folder organized, checklist created. |

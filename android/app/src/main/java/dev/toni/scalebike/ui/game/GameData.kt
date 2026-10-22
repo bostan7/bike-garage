@@ -20,7 +20,7 @@ import java.util.Locale
 // Pure helpers for the game UI: they only read BikeData (the data layer stays the source of truth).
 
 /** The PARTS areas in menu order. Labels come from [Category.label]. */
-val GAME_AREAS = listOf(Category.WHEELS, Category.DRIVETRAIN, Category.BRAKES, Category.COCKPIT, Category.FRAME, Category.CONTACT)
+val GAME_AREAS = listOf(Category.WHEELS, Category.DRIVETRAIN, Category.BRAKES, Category.COCKPIT, Category.FRAME, Category.CONTACT, Category.ACCESSORIES)
 
 val GarageMode.title: String
     get() = when (this) {

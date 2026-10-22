@@ -65,12 +65,18 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
 
         private const val TAG = "GarageScene"
 
-        /** The 23 part slots: node names in bike.glb, part slots in SeedData. */
+        /** Toni's accessories: node names in bike.glb and part slots (category Accessories); hideable as a group. */
+        val ACCESSORY_SLOTS: Set<String> = setOf(
+            "acc_mudguard_front", "acc_mudguard_rear", "acc_light_rear", "acc_light_front", "acc_light_clip",
+            "acc_bell", "acc_lock", "acc_reflectors",
+        )
+
+        /** The 23 part slots (SeedData) plus the accessories: node names in bike.glb. */
         val SLOTS: Set<String> = setOf(
             "frame", "fork", "headset", "stem", "handlebar", "grips", "shifter", "brake_front", "brake_rear",
             "rotor_front", "rotor_rear", "crankset", "bottom_bracket", "chain", "cassette", "derailleur", "pedals",
             "wheel_front", "wheel_rear", "tire_front", "tire_rear", "seatpost", "saddle",
-        )
+        ) + ACCESSORY_SLOTS
 
         private val NEON_GROUPS = setOf("neon_ring", "neon_strips", "sign")
         private const val HEX_GROUP = "hex_lights"
@@ -138,6 +144,8 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
     private val slotBoxes = HashMap<String, FloatArray>()  // min xyz, max xyz at turntable yaw 0
     private val neonGlows = ArrayList<Glow>()
     private val neonRenderables = ArrayList<Int>()
+    private val accessoryRenderables = ArrayList<Int>()
+    private var accessoriesOn = true
     private val hexGlows = ArrayList<Glow>()
     private val hexRenderables = ArrayList<Int>()
     private val paramCache = HashMap<Long, ParamInfo>()
@@ -574,6 +582,7 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
         for (e in asset.renderableEntities) {
             val slot = groupOf(asset, e, SLOTS, prefix = false) ?: continue
             entitySlot[e] = slot
+            if (slot in ACCESSORY_SLOTS) accessoryRenderables.add(e)
             val ri = rm.getInstance(e)
             rm.setCastShadows(ri, true)
             rm.setReceiveShadows(ri, true)
@@ -613,6 +622,7 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
         }
         val missing = SLOTS - slotGlows.keys
         if (missing.isNotEmpty()) Log.w(TAG, "bike.glb is missing slots: $missing")
+        setVisible(accessoryRenderables, accessoriesOn)
         yaw = savedYaw
         yawDirty = true
     }
@@ -673,6 +683,13 @@ class GarageScene(context: Context, private val surfaceView: SurfaceView) :
             old?.let { paintSlot(it) }
             slot?.let { paintSlot(it) }
         }
+        dirty = true
+    }
+
+    override fun setAccessoriesVisible(visible: Boolean) {
+        if (released) return
+        accessoriesOn = visible
+        setVisible(accessoryRenderables, visible)  // empty until the bike is loaded; applied again after loading
         dirty = true
     }
 

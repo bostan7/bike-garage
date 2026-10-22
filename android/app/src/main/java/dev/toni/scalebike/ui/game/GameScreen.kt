@@ -329,7 +329,8 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
                         fx.confirm()
                         ui.showBanner(
                             "+ ${m.km.km()} from Timeline",
-                            "${m.newDays} new day${if (m.newDays == 1) "" else "s"} · ${m.updatedDays} updated · ${parsed.trips} trips",
+                            "${m.newDays} new day${if (m.newDays == 1) "" else "s"} · ${m.updatedDays} updated · ${parsed.trips} trips" +
+                                if (m.estimateKm > 0) " · before: ~${groupedKm(m.estimateKm)} km estimated" else "",
                         )
                     }
                 }
@@ -372,6 +373,14 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
     }
     LaunchedEffect(controller, ui.selected) {
         controller?.setSelected(ui.selected)
+    }
+    LaunchedEffect(controller, fx.accessoriesOn) {
+        controller?.setAccessoriesVisible(fx.accessoriesOn)
+    }
+    // looking at an accessory brings the accessories back if they were hidden
+    LaunchedEffect(ui.area, ui.selected) {
+        val wantsThem = ui.area == Category.ACCESSORIES || ui.selected?.startsWith("acc_") == true
+        if (wantsThem && !fx.accessoriesOn) fx.toggleAccessories()
     }
 
     BackHandler(enabled = !ui.introDone || ui.detailsId != null || ui.selected != null || ui.area != null || ui.mode != GarageMode.GARAGE) {
@@ -421,6 +430,7 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
                 alerts = summary.alerts,
                 statusOn = ui.statusOn,
                 soundOn = fx.soundOn,
+                accessoriesOn = fx.accessoriesOn,
                 classLetter = summary.classLetter,
                 score = summary.score,
                 onAlerts = {
@@ -432,6 +442,7 @@ fun GameScreen(data: BikeData, controller: GarageController?, modifier: Modifier
                 },
                 onStatus = ui::toggleStatus,
                 onSound = fx::toggleSound,
+                onAccessories = fx::toggleAccessories,
                 modifier = hud.align(Alignment.TopEnd).padding(end = 16.dp + insetR, top = 10.dp + insetT),
             )
             EdgeGlow(true, ui.edgeHeld < 0, hud.align(Alignment.CenterStart).fillMaxHeight(EDGE_ZONE))

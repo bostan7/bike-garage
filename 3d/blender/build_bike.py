@@ -2,12 +2,17 @@
 
 Run (headless):
   blender --background --factory-startup --python 3d/blender/build_bike.py -- \
-      --glb 3d/models/bike.glb [--blend out.blend] [--render DIR] [--views side_photo,front34]
+      --glb 3d/models/bike.glb [--glb-draco android/app/src/main/assets/bike.glb] [--no-accessories] \
+      [--blend out.blend] [--render DIR] [--views side_photo,front34]
 
-Every part is one object named after its app slot (frame, fork, chain, ...). See CLAUDE.md.
+Every part is one object named after its app slot (frame, fork, chain, ...); see "Part slots" in the root README.
+Toni's accessories (mudguards, lights, bell, lock, reflectors) are extra objects named acc_* (bikelib/accessories.py),
+built by default; --no-accessories leaves them out.
 """
 import argparse
+import json
 import os
+import struct
 import sys
 import time
 
@@ -17,7 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
-from bikelib import brakes, cockpit, drivetrain, fork, frame, materials, preview, seat, wheels  # noqa: E402
+from bikelib import accessories, brakes, cockpit, drivetrain, fork, frame, materials, preview, seat, wheels  # noqa: E402
 
 SLOTS = ["frame", "fork", "headset", "stem", "handlebar", "grips", "shifter", "brake_front", "brake_rear",
          "rotor_front", "rotor_rear", "crankset", "bottom_bracket", "chain", "cassette", "derailleur", "pedals",
@@ -33,7 +38,7 @@ def clear_scene():
     materials.reset()
 
 
-def build():
+def build(with_accessories=True):
     coll = bpy.data.collections.new("ScaleBike")
     bpy.context.scene.collection.children.link(coll)
     remote_anchor = lambda side: cockpit.bar_point(side * (0.370 - 0.130 - 0.050))  # noqa: E731
@@ -62,9 +67,12 @@ def build():
         lambda: seat.build_seatpost(coll),
         lambda: seat.build_saddle(coll),
     ]
+    if with_accessories:
+        builders.append(lambda: accessories.build_all(coll))
     for b in builders:
         b()
-    missing = [s for s in SLOTS if s not in coll.objects]
+    expected = SLOTS + (accessories.NAMES if with_accessories else [])
+    missing = [s for s in expected if s not in coll.objects]
     assert not missing, f"missing slots: {missing}"
     return coll
 
@@ -74,8 +82,12 @@ def build():
 BUDGET = {"frame": 110_000, "fork": 60_000, "tire_front": 62_000, "tire_rear": 62_000, "wheel_front": 30_000,
           "wheel_rear": 30_000, "chain": 40_000, "cassette": 45_000, "crankset": 18_000, "derailleur": 22_000,
           "brake_front": 15_000, "brake_rear": 15_000, "rotor_front": 10_000, "rotor_rear": 10_000,
-          "saddle": 20_000, "pedals": 15_000, "grips": 10_000, "handlebar": 8_000, "stem": 8_000,
-          "shifter": 8_000, "seatpost": 6_000, "headset": 4_000, "bottom_bracket": 3_000}
+          "saddle": 26_000, "pedals": 15_000, "grips": 10_000, "handlebar": 8_000, "stem": 8_000,
+          "shifter": 8_000, "seatpost": 6_000, "headset": 4_000, "bottom_bracket": 3_000,
+          # Toni's accessories (v2 2026-10-22, rebuilt from product photos): a few thousand each
+          "acc_mudguard_front": 8_000, "acc_mudguard_rear": 10_000, "acc_light_rear": 4_000,
+          "acc_light_front": 4_000, "acc_light_clip": 3_000, "acc_bell": 4_000, "acc_lock": 7_500,
+          "acc_reflectors": 4_500}
 
 
 def stats(coll):
@@ -117,11 +129,29 @@ def export_glb(coll, path, draco=False):
     print(f"exported {path} ({os.path.getsize(path) / 1e6:.2f} MB{', draco' if draco else ''})")
 
 
+def check_glb(path, expected):
+    """Read the glb's JSON chunk and check that every expected node name is there."""
+    with open(path, "rb") as fh:
+        data = fh.read()
+    magic, _, _ = struct.unpack_from("<III", data, 0)
+    assert magic == 0x46546C67, "not a glb"
+    length, _ = struct.unpack_from("<II", data, 12)
+    gltf = json.loads(data[20:20 + length].decode("utf-8"))
+    names = [n.get("name", "") for n in gltf.get("nodes", [])]
+    missing = [n for n in expected if n not in names]
+    acc = sorted(n for n in names if n.startswith("acc_"))
+    print(f"check {path}: {len(names)} nodes, {len([n for n in expected if n in names])}/{len(expected)} expected "
+          f"names present; accessories: {', '.join(acc) or '-'}; draco: "
+          f"{'KHR_draco_mesh_compression' in gltf.get('extensionsUsed', [])}")
+    assert not missing, f"{path}: missing nodes {missing}"
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
     ap.add_argument("--glb")
     ap.add_argument("--glb-draco", help="also write a Draco-compressed copy (for the phone app)")
+    ap.add_argument("--no-accessories", action="store_true", help="leave out Toni's acc_* accessories")
     ap.add_argument("--blend")
     ap.add_argument("--render")
     ap.add_argument("--views", default="")
@@ -129,13 +159,16 @@ def main():
 
     t0 = time.time()
     clear_scene()
-    coll = build()
+    coll = build(with_accessories=not args.no_accessories)
+    expected = SLOTS + ([] if args.no_accessories else accessories.NAMES)
     print(f"built {len(coll.objects)} parts in {time.time() - t0:.1f}s")
     stats(coll)
     if args.glb:
         export_glb(coll, args.glb)
+        check_glb(args.glb, expected)
     if args.glb_draco:
         export_glb(coll, args.glb_draco, draco=True)
+        check_glb(args.glb_draco, expected)
     if args.blend:
         bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(args.blend))
     if args.render:

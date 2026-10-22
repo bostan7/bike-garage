@@ -1,5 +1,5 @@
 """Drivetrain: FC-MT511-1 32T crankset, BB-MT500-PA, KMC X12 chain, CS-M6100-12 10-51T cassette,
-RD-M6100-SGS derailleur, Feimin flat pedals.
+RD-M6100-SGS derailleur, Toni's Giant Flipside Commuter pedals (SPD on one side, flat on the other).
 
 Shapes follow the reference photos in photos/online-reference/ (shimano-drivetrain/, buycycle-scale980-2022-L/)
 and are placed with points traced on SCOTT's studio side photo (mm from the rear axle or the BB)."""
@@ -509,6 +509,14 @@ def build_derailleur(coll):
     _axle_plate(part, mk.rounded_poly([(-18, -58), (22, -66), (25, -84), (-15, -76)], 2.5, n=3),
                 Y_BODY_FACE - 0.0006, 0.0020, grey, bevel=0.0007, bevel_res=1)
     _rd_text(part, "DEORE", (4.0, -71.5), -11.5, 5.4, 27.0, Y_BODY_FACE - 0.0024, M.get("deore_logo"), "FRAHVIT.TTF")
+    # light wear (Toni's photos): scratches on the cover, chipped (bare aluminium) edges of the body
+    for (sx_, sz_, ang, ln) in ((-10.0, -62.0, 20.0, 9.0), (12.0, -79.0, -35.0, 7.0), (-4.0, -66.0, 60.0, 5.0),
+                                (17.0, -70.0, 5.0, 6.0)):
+        mk.box(part, _ax(sx_, sz_, Y_BODY_FACE - 0.0027), (ln * MM, 0.00012, 0.00035), steel,
+               rot=mk.rot_y(math.radians(ang)))
+    for (sx_, sz_) in ((-46.0, -60.0), (30.0, -86.0), (24.0, -66.0), (-30.0, -78.0)):
+        mk.ellipsoid(part, _ax(sx_, sz_, Y_BODY_FACE + 0.0004), (0.0016, 0.0008, 0.0012), M.get("alu_silver"),
+                     segs=8, rings=4)
     # inner link plate behind the body
     _axle_plate(part, mk.rounded_poly([(-30, -50), (20, -70), (28, -92), (-20, -78)], 4.0, n=3), -0.0790, 0.0040,
                 black, bevel=0.0008)
@@ -577,34 +585,79 @@ def build_derailleur(coll):
 
 # ----------------------------------------------------------------------------------- pedals
 
+def _spd_mechanism(part, centre, up, side, silver, black, steel):
+    """SPD clip-in mechanism on the `up` face: front and rear retention plates with their jaws, two spring
+    bolts with black coil springs, raised black body over the axle (Toni's pedal photo)."""
+    mk.box(part, centre + up * 0.0045, (0.040, 0.034, 0.010), black)                       # raised body over the axle
+    for fx in (-1.0, 1.0):
+        plate = mk.plate2d(mk.rounded_poly([(-0.013, 0.0), (0.013, 0.0), (0.016, 0.009), (0.006, 0.013),
+                                            (-0.006, 0.013), (-0.016, 0.009)], 0.002, n=2), thickness=0.0016,
+                           bevel=0.0003)
+        o = centre + X * (fx * 0.021) + up * 0.0075
+        mk.place(plate, o, Y, X * fx, up)                                                    # jaw opens outwards
+        part.add_bm(plate, silver, smooth=False)
+        mk.box(part, o + X * (fx * 0.006) + up * 0.0015, (0.004, 0.022, 0.004), silver)     # jaw lip
+    for sy_ in (-0.011, 0.011):                                                              # spring bolts + coils
+        q = centre + Y * (sy_ * side) + up * 0.006 - X * 0.010
+        mk.cyl(part, q - X * 0.012, q + X * 0.004, 0.0012, steel, n=8)
+        coil = []
+        for k in range(73):
+            a = 2 * math.pi * k / 12
+            coil.append(q - X * (0.010 - 0.012 * k / 72) + Y * (0.0026 * math.cos(a)) + up * (0.0026 * math.sin(a)))
+        mk.tube_path(part, coil, (0.00055, 0.00055), black, n=5, caps=False)
+        mk.cyl(part, q - X * 0.012, q - X * 0.0135, 0.0024, steel, n=6)                     # bolt head (hex)
+
+
 def build_pedals(coll):
-    """Toni's pedals: silver two-sided aluminium trekking pedals (Wellgo B087-like; exact model to come):
-    box frame with an open centre, axle body across the middle, small pins on both faces, amber reflectors
-    in the front and back walls, black dust cap."""
+    """Toni's Giant Flipside Commuter pedals (photos 2026-10-18): dual function. A rounded, D-shaped cage with a
+    silver (machined, ribbed) aluminium rim and a black inner body; square traction studs around the cage;
+    the SPD clip-in mechanism on the upper face, a flat black platform on the lower face; chrome spindle."""
     part = Part("pedals", "Drivetrain")
-    silver, black, steel, refl = M.get("alu_silver"), M.get("black_anodised"), M.get("steel"), M.get("reflector")
-    L, W, T = 0.090, 0.098, 0.020                                   # fore-aft, across, thickness
-    wall = 0.0075
+    silver, black, steel, gloss = M.get("alu_silver"), M.get("black_anodised"), M.get("steel"), M.get("black_gloss")
+    Lx, Wy, T = 0.090, 0.082, 0.017                                  # fore-aft, across, cage thickness
     for p, side in zip(pedal_points(), (-1.0, 1.0)):
-        mk.cyl(part, p, p + Y * (side * 0.020), 0.0065, black, n=20)                        # spindle
-        centre = p + Y * (side * 0.063)
-        # open box frame: four walls, so you can see through between the axle body and the ribs
-        for sx_ in (-1.0, 1.0):                                                               # front / back walls
-            mk.box(part, centre + X * (sx_ * (L / 2 - wall / 2)), (wall, W, T), silver)
-        for sy_ in (-1.0, 1.0):                                                               # side walls
-            mk.box(part, centre + Y * (sy_ * (W / 2 - 0.004)), (L - 2 * wall + 0.002, 0.008, T * 0.85), silver)
-        a, b = centre - Y * (side * (W / 2 - 0.004)), centre + Y * (side * (W / 2 - 0.004))
-        mk.cyl(part, a, b, 0.0085, silver, n=32)                                             # axle body
-        mk.cyl(part, b, b + Y * (side * 0.0045), 0.0080, black, r2=0.0074, n=24)            # dust cap
-        for sx_ in (-0.022, 0.022):                                                           # thin cross ribs
-            mk.box(part, centre + X * sx_, (0.0030, W - 0.010, T * 0.45), silver)
-        for sx_ in (-(L / 2 - wall / 2), L / 2 - wall / 2):                                  # pins, both faces
-            for sy_ in (-0.033, -0.011, 0.011, 0.033):
-                for sz in (-1.0, 1.0):
-                    q = centre + X * sx_ + Y * sy_ + Z * (sz * T / 2)
-                    mk.cyl(part, q, q + Z * (sz * 0.0028), 0.0013, steel, n=8)
-        for sx_ in (-1.0, 1.0):                                                               # amber reflectors
-            r = mk.plate2d(mk.rounded_rect(0.0, 0.0, 0.050, 0.010, 0.002), thickness=0.0016)
-            mk.place(r, centre + X * (sx_ * (L / 2 + 0.0006)), Y, Z, X * sx_)
-            part.add_bm(r, refl)
+        mk.cyl(part, p, p + Y * (side * 0.018), 0.0062, steel, n=20)                          # chrome spindle
+        mk.cyl(part, p + Y * (side * 0.004), p + Y * (side * 0.012), 0.0085, steel, r2=0.0080, n=24)
+        centre = p + Y * (side * (0.018 + Wy / 2))
+
+        def flat(outline, t, z0=0.0):
+            bm = mk.plate2d(outline, holes=[], thickness=t, bevel=0.0008, bevel_res=1)
+            mk.place(bm, centre + Z * z0, X, Y, Z)
+            return bm
+        outer = mk.rounded_poly([(-Lx / 2, -Wy / 2), (Lx / 2, -Wy / 2), (Lx / 2, Wy / 2 - 0.010),
+                                 (Lx / 2 - 0.016, Wy / 2), (-Lx / 2 + 0.016, Wy / 2), (-Lx / 2, Wy / 2 - 0.010)],
+                                0.014, n=5)
+        rim_in = mk.rounded_rect(0.0, 0.0, Lx - 0.014, Wy - 0.014, 0.012, n=5)
+        hole = mk.rounded_rect(0.0, 0.0, Lx - 0.030, Wy - 0.030, 0.010, n=5)
+        if side < 0:                                                  # D shape: the rounded side is the outer end
+            outer = [(u, -v) for u, v in outer]
+        # silver outer rim band (both faces + outer wall) and the black inner cage body
+        bm = mk.plate2d(outer, holes=[list(reversed(rim_in))], thickness=T, bevel=0.0012, bevel_res=1)
+        mk.place(bm, centre, X, Y, Z)
+        part.add_bm(bm, silver)
+        bm = mk.plate2d(rim_in, holes=[list(reversed(hole))], thickness=T + 0.0006, bevel=0.0010, bevel_res=1)
+        mk.place(bm, centre, X, Y, Z)
+        part.add_bm(bm, black)
+        # machined ribs on the silver rim, both faces
+        for k in range(26):
+            a = 2 * math.pi * (k + 0.5) / 26
+            u, v = (Lx / 2 - 0.0035) * math.cos(a), (Wy / 2 - 0.0035) * math.sin(a)
+            for fz in (-1.0, 1.0):
+                mk.box(part, centre + X * u + Y * v + Z * (fz * T / 2), (0.0012, 0.0012, 0.0005), steel,
+                       rot=mk.basis(Vector((math.cos(a), math.sin(a), 0.0)), Z))
+        # axle body across the middle
+        mk.cyl(part, centre - Y * (Wy / 2 - 0.006), centre + Y * (Wy / 2 - 0.006), 0.0090, black, n=24)
+        mk.cyl(part, centre + Y * (side * (Wy / 2 - 0.004)), centre + Y * (side * (Wy / 2 + 0.002)), 0.0075, gloss,
+               r2=0.0068, n=20)                                                                # dust cap
+        # SPD side up, flat platform down
+        _spd_mechanism(part, centre, Z, side, M.get("steel"), gloss, steel)
+        plat = mk.plate2d(mk.rounded_rect(0.0, 0.0, Lx - 0.028, Wy - 0.028, 0.009, n=4), thickness=0.0035,
+                          bevel=0.0006)
+        mk.place(plat, centre - Z * (T / 2 - 0.0025), X, Y, Z)
+        part.add_bm(plat, black)
+        # square traction studs on both faces
+        studs = [(-Lx / 2 + 0.010, sv * 0.026) for sv in (-1, 1)] + [(Lx / 2 - 0.010, sv * 0.026) for sv in (-1, 1)] +                 [(su * 0.018, sv * (Wy / 2 - 0.008)) for su in (-1, 1) for sv in (-1, 1)]
+        for u, v in studs:
+            for fz in (-1.0, 1.0):
+                mk.box(part, centre + X * u + Y * v + Z * (fz * (T / 2 + 0.0012)), (0.0045, 0.0045, 0.0030), steel)
     return part.finish(coll, pivot=S.BB, sharp_angle=50.0)

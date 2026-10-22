@@ -1,9 +1,11 @@
-"""Syncros 31.6 x 400 mm seatpost (+ quick-release seat clamp) and Toni's saddle: a bigger, softer comfort
-saddle (replaced the stock Syncros Belcarra; exact model to come from Toni's photos)."""
+"""Syncros 31.6 x 400 mm seatpost (+ quick-release seat clamp) and Toni's saddle: a wide hydrofoam comfort
+saddle taken from a Kettler e-bike (replaced the stock Syncros Belcarra; photos 2026-10-18)."""
 import math
 
+import bmesh
 import bpy
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 from . import materials as M
 from . import meshkit as mk
@@ -72,17 +74,26 @@ def build_seatpost(coll):
 
 
 # saddle stations: x (forward, m), half width, half thickness, vertical offset of the top line.
-# Comfort saddle (WTB Comfort Wide / Selle Royal Explora-like): ~255 mm long, ~172 mm wide, thick padding
-SADDLE = [(-0.120, 0.040, 0.010, 0.004), (-0.116, 0.066, 0.016, 0.003), (-0.106, 0.080, 0.020, 0.002),
-          (-0.090, 0.086, 0.021, 0.001), (-0.068, 0.085, 0.021, 0.0), (-0.045, 0.078, 0.021, -0.001),
-          (-0.020, 0.064, 0.020, -0.002), (0.005, 0.048, 0.019, -0.003), (0.030, 0.036, 0.018, -0.003),
-          (0.058, 0.030, 0.017, -0.0025), (0.085, 0.027, 0.016, -0.0015), (0.108, 0.025, 0.015, -0.001),
-          (0.124, 0.021, 0.013, -0.002), (0.132, 0.014, 0.010, -0.004), (0.136, 0.007, 0.006, -0.006)]
+# Toni's hydrofoam comfort saddle (from a Kettler e-bike, photos 2026-10-18): ~260 mm long, ~200 mm wide rear,
+# deep centre channel running out through the rear (two rounded rear lobes), rounded nose.
+SADDLE = [(-0.128, 0.026, 0.005, 0.002), (-0.124, 0.062, 0.012, 0.005), (-0.118, 0.082, 0.018, 0.005), (-0.108, 0.096, 0.022, 0.004),
+          (-0.092, 0.100, 0.023, 0.003), (-0.070, 0.097, 0.023, 0.001), (-0.045, 0.086, 0.022, -0.001),
+          (-0.020, 0.068, 0.021, -0.002), (0.005, 0.050, 0.020, -0.003), (0.030, 0.037, 0.018, -0.003),
+          (0.058, 0.031, 0.017, -0.0025), (0.085, 0.028, 0.016, -0.0015), (0.108, 0.027, 0.015, -0.001),
+          (0.124, 0.024, 0.014, -0.002), (0.133, 0.017, 0.011, -0.004), (0.138, 0.008, 0.007, -0.006)]
+
+
+def _groove(dx):
+    """Centre channel: (half width, depth) at dx from the saddle centre; deep at the rear, gone at the nose."""
+    k = min(1.0, max(0.0, (0.090 - dx) / 0.120))
+    tail = min(1.0, max(0.0, (dx + 0.128) / 0.024))       # ease out over the rounded rear edge (no pinch)
+    tail = tail * tail * (3 - 2 * tail)
+    return 0.007 + 0.011 * k, 0.0105 * k ** 0.8 * tail
 
 
 def build_saddle(coll):
     part = Part("saddle", "Saddle & seatpost")
-    cover, base_mat, rails_mat = M.get("black_matte"), M.get("black_gloss"), M.get("black_anodised")
+    cover, base_mat, rails_mat = M.get("leatherette"), M.get("black_gloss"), M.get("black_anodised")
     top = saddle_top() + X * 0.012
     pts, prof = [], []
     for x, w, h, dz in SADDLE:
@@ -92,15 +103,53 @@ def build_saddle(coll):
     mk.tube_path(shell, mk.catmull_rom(pts, 3), [mk.interp_keys([(i / (len(prof) - 1), p) for i, p in enumerate(prof)],
                                                                  t / (3 * (len(prof) - 1)))
                                                   for t in range(3 * (len(prof) - 1) + 1)],
-                 None, n=48, power=2.6)
+                 None, n=56, power=2.6)
     padded = mk.subdivided(shell, 1)
-    # central relief groove along the top (comfort saddles have one)
+    # deep relief channel along the top, running out through the rear between two lobes
+    # (only upward-facing skin moves, fading out over the rear face, so the rear edge stays clean)
+    bmesh.ops.recalc_face_normals(padded, faces=padded.faces[:])      # outward normals
+    padded.normal_update()
+    moves = []
     for v in padded.verts:
         dx, dy = v.co.x - top.x, v.co.y - top.y
-        if -0.090 < dx < 0.100 and abs(dy) < 0.011 and v.co.z > top.z - 0.012:
-            window = math.sin(math.pi * (dx + 0.090) / 0.190) ** 0.6
-            v.co.z -= 0.0035 * window * math.cos(math.pi / 2 * abs(dy) / 0.011) ** 2
+        hw, depth = _groove(dx)
+        if dx < 0.095 and abs(dy) < hw:
+            up = min(1.0, max(0.0, (v.normal.z - 0.15) / 0.55))
+            moves.append((v, depth * up * (1.0 - (abs(dy) / hw) ** 2) ** 1.5))
+    for v, d in moves:
+        v.co.z -= d
+    bvh = BVHTree.FromBMesh(padded)
+
+    def surface_z(x, y):
+        hit = bvh.ray_cast(Vector((x, y, top.z + 0.05)), Vector((0.0, 0.0, -1.0)))
+        return hit[0].z if hit[0] is not None else None
+    nose_x = max(v.co.x for v in padded.verts)
     part.add_bm(padded, cover)
+    # fine ribs across the bottom of the channel, and "hydrofoam" behind them
+    for k in range(30):
+        x = top.x - 0.068 + 0.0028 * k
+        hw, _ = _groove(x - top.x)
+        z = surface_z(x, top.y)
+        if z is not None:
+            mk.box(part, Vector((x, top.y, z + 0.0001)), (0.0006, hw * 0.75, 0.0007), base_mat)
+    probe = mk._text_mesh("hydrofoam", 1.0, 0.0, "C:/Windows/Fonts/arial.ttf")
+    xs = [v.co.x for v in probe.vertices]
+    ys = [v.co.y for v in probe.vertices]
+    bpy.data.meshes.remove(probe)
+    sc = 0.028 / (max(xs) - min(xs))
+    x0 = top.x - 0.090
+
+    def on_channel(v):
+        x, y = x0 + v.x * sc, top.y + v.y * sc
+        z = surface_z(x, y)
+        return Vector((x, y, (z if z is not None else top.z - 0.01) + 0.0004))
+    mk.add_text(part, "hydrofoam", 1.0, 0.0, M.get("decal_grey"), on_channel, "C:/Windows/Fonts/arial.ttf",
+                max_edge=0.05)
+    # torn nose: pale foam showing through at the tip
+    nz = surface_z(nose_x - 0.007, top.y)
+    if nz is not None:
+        mk.ellipsoid(part, Vector((nose_x - 0.004, top.y + 0.002, nz - 0.0045)), (0.0075, 0.0090, 0.0055),
+                     M.get("foam"), segs=16, rings=8)
     # plastic base, slightly smaller and lower
     base_pts = [p + Z * -0.006 for p in pts[1:-1]]
     base_prof = [(w * 0.88, h * 0.55) for (w, h) in prof[1:-1]]

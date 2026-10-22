@@ -79,11 +79,13 @@ fun TopRightHud(
     alerts: Int,
     statusOn: Boolean,
     soundOn: Boolean,
+    accessoriesOn: Boolean,
     classLetter: String,
     score: Int,
     onAlerts: () -> Unit,
     onStatus: () -> Unit,
     onSound: () -> Unit,
+    onAccessories: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
@@ -95,6 +97,7 @@ fun TopRightHud(
             leading = if (alerts > 0) ({ StatusDot(G.over, glow = true, size = 8.dp) }) else null,
         )
         ChipButton("STATUS", statusOn, onStatus, toggle = true)
+        ChipButton("ACCESSORIES", accessoriesOn, onAccessories, toggle = true)
         ChipButton("SOUND", soundOn, onSound, toggle = true)
         ConditionBadge(classLetter, score)
     }
